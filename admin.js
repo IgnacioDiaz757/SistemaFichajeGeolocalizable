@@ -4,47 +4,81 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let todos = [];
-let zona  = JSON.parse(localStorage.getItem("zona_obra")) || null;
+let obras = [];
 
-// ── Zona de obra ──────────────────────────────────────────
+// ── Gestión de obras ──────────────────────────────────────
 
-function actualizarLabelZona() {
-  const el = document.getElementById("zona-label");
-  if (zona) {
-    el.textContent = `${zona.nombre} — radio ${zona.radio}m`;
-    el.className = "zona-activa";
-    document.getElementById("z-nombre").value = zona.nombre;
-    document.getElementById("z-lat").value    = zona.lat;
-    document.getElementById("z-lng").value    = zona.lng;
-    document.getElementById("z-radio").value  = zona.radio;
-  } else {
-    el.textContent = "Sin zona configurada";
-    el.className = "zona-inactiva";
-  }
+async function cargarObras() {
+  const { data, error } = await db.from("obras").select("*").order("nombre");
+  if (!error) obras = data || [];
+  renderGestionObras();
 }
 
-function guardarZona() {
-  const nombre = document.getElementById("z-nombre").value.trim();
-  const lat    = parseFloat(document.getElementById("z-lat").value);
-  const lng    = parseFloat(document.getElementById("z-lng").value);
-  const radio  = parseFloat(document.getElementById("z-radio").value) || 200;
-
-  if (!nombre || isNaN(lat) || isNaN(lng)) {
-    alert("Completá nombre, latitud y longitud.");
+function renderGestionObras() {
+  const contenedor = document.getElementById("obras-lista");
+  if (!obras.length) {
+    contenedor.innerHTML = '<p style="color:#999;font-size:13px;padding:12px 16px">Sin obras configuradas. Agregá una con el botón.</p>';
     return;
   }
+  const base = `${window.location.origin}${window.location.pathname.replace("admin.html", "")}`;
+  contenedor.innerHTML = obras.map(o => {
+    const link = `${base}contratista.html?obra=${o.token || ""}`;
+    return `
+    <div class="obra-item">
+      <div class="obra-info">
+        <span class="obra-nombre">${o.nombre}</span>
+        <span class="obra-coords">${o.lat != null ? `${o.lat}, ${o.lng} — radio ${o.radio}m` : "Sin coordenadas GPS"}</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-azul" style="font-size:12px;padding:5px 10px" onclick="copiarLink('${link}')">🔗 Copiar link</button>
+        <button class="btn-del" onclick="eliminarObra('${o.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join("");
+}
 
-  zona = { nombre, lat, lng, radio };
-  localStorage.setItem("zona_obra", JSON.stringify(zona));
-  actualizarLabelZona();
-  document.getElementById("zona-details").removeAttribute("open");
+function copiarLink(url) {
+  navigator.clipboard.writeText(url).then(() => {
+    alert("Link copiado al portapapeles.");
+  }).catch(() => {
+    prompt("Copiá este link:", url);
+  });
+}
+
+function toggleNuevaObra() {
+  const form = document.getElementById("nueva-obra-form");
+  form.style.display = form.style.display === "none" ? "flex" : "none";
+}
+
+async function agregarObra() {
+  const nombre = document.getElementById("z-nombre").value.trim();
+  const latVal = document.getElementById("z-lat").value;
+  const lngVal = document.getElementById("z-lng").value;
+  const lat    = latVal ? parseFloat(latVal) : null;
+  const lng    = lngVal ? parseFloat(lngVal) : null;
+  const radio  = parseInt(document.getElementById("z-radio").value) || 200;
+
+  if (!nombre) { alert("Ingresá el nombre de la obra."); return; }
+
+  const { data, error } = await db.from("obras").insert([{ nombre, lat, lng, radio }]).select();
+  if (error) { alert("Error al guardar la obra."); return; }
+
+  obras.push(data[0]);
+  renderGestionObras();
+  document.getElementById("z-nombre").value = "";
+  document.getElementById("z-lat").value    = "";
+  document.getElementById("z-lng").value    = "";
+  document.getElementById("z-radio").value  = "200";
+  document.getElementById("nueva-obra-form").style.display = "none";
   aplicarFiltros();
 }
 
-function borrarZona() {
-  zona = null;
-  localStorage.removeItem("zona_obra");
-  actualizarLabelZona();
+async function eliminarObra(id) {
+  if (!confirm("¿Eliminar esta obra?")) return;
+  const { error } = await db.from("obras").delete().eq("id", id);
+  if (error) { alert("Error al eliminar."); return; }
+  obras = obras.filter(o => o.id !== id);
+  renderGestionObras();
   aplicarFiltros();
 }
 
@@ -70,12 +104,13 @@ function distanciaMetros(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function badgeVerificacion(lat, lng) {
-  if (!zona || lat == null || lng == null) {
+function badgeVerificacion(r) {
+  const obra = obras.find(o => o.nombre === r.lugar);
+  if (!obra || obra.lat == null || r.lat == null || r.lng == null) {
     return '<span class="v-none">Sin zona</span>';
   }
-  const dist = Math.round(distanciaMetros(zona.lat, zona.lng, lat, lng));
-  if (dist <= zona.radio) {
+  const dist = Math.round(distanciaMetros(obra.lat, obra.lng, r.lat, r.lng));
+  if (dist <= obra.radio) {
     return `<span class="v-ok">✓ En zona (${dist}m)</span>`;
   }
   return `<span class="v-fail">✗ Fuera de zona (${dist}m)</span>`;
@@ -85,6 +120,7 @@ function badgeVerificacion(lat, lng) {
 
 async function cargarDatos() {
   setEstado("Cargando...");
+  await cargarObras();
 
   const { data, error } = await db
     .from("asistencias")
@@ -115,7 +151,7 @@ function aplicarFiltros() {
   const datos = getFiltrados();
   renderResumen(datos);
   renderTabla(datos);
-  renderListaEmpleados(datos);
+  renderListaPorObra(datos);
 }
 
 function limpiarFiltros() {
@@ -156,7 +192,7 @@ function renderTabla(datos) {
       <td class="nowrap">${d.toLocaleDateString("es-AR")}</td>
       <td class="nowrap">${d.toLocaleTimeString("es-AR")}</td>
       <td>${r.lugar || "—"}</td>
-      <td>${badgeVerificacion(r.lat, r.lng)}</td>
+      <td>${badgeVerificacion(r)}</td>
       <td class="nowrap"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></td>
       <td><button class="btn-del" onclick="eliminar(${r.id})">✕</button></td>
     `;
@@ -164,19 +200,21 @@ function renderTabla(datos) {
   });
 }
 
-function renderListaEmpleados(datos) {
+function renderListaPorObra(datos) {
   const contenedor = document.getElementById("lista-empleados");
   contenedor.innerHTML = "";
   if (!datos.length) return;
 
-  const mapaEmp = new Map();
+  const mapaObra = new Map();
   datos.forEach(r => {
-    if (!mapaEmp.has(r.empleado)) mapaEmp.set(r.empleado, []);
-    mapaEmp.get(r.empleado).push(r);
+    const key = r.lugar || "Sin obra asignada";
+    if (!mapaObra.has(key)) mapaObra.set(key, []);
+    mapaObra.get(key).push(r);
   });
 
-  mapaEmp.forEach((registros, nombre) => {
-    const bloque = document.createElement("div");
+  [...mapaObra.keys()].sort().forEach(obraNombre => {
+    const registros = mapaObra.get(obraNombre);
+    const bloque    = document.createElement("div");
     bloque.className = "empleado-bloque";
 
     const filas = registros.map(r => {
@@ -184,7 +222,6 @@ function renderListaEmpleados(datos) {
       const icono   = r.tipo === "ingreso" ? "▲" : "▼";
       const label   = r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1);
       const mapsUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
-      const dir     = r.lugar || `${r.lat}, ${r.lng}`;
       const fotoHtml = r.foto_url
         ? `<img class="foto-thumb" src="${r.foto_url}" onclick="verFoto('${r.foto_url}')" alt="foto">`
         : `<div class="foto-none">📷</div>`;
@@ -192,17 +229,18 @@ function renderListaEmpleados(datos) {
       return `
         <div class="registro-fila" id="fila-${r.id}">
           ${fotoHtml}
+          <span class="empleado-nombre">${r.empleado}</span>
           <span class="tipo-${r.tipo}">${icono} ${label}</span>
           <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR")}</span>
-          <span class="dir"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 ${dir}</a></span>
-          ${badgeVerificacion(r.lat, r.lng)}
+          <span class="dir"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></span>
+          ${badgeVerificacion(r)}
           <button class="btn-del" onclick="eliminar(${r.id})">✕</button>
         </div>`;
     }).join("");
 
     bloque.innerHTML = `
       <div class="empleado-header">
-        <span>${nombre}</span>
+        <span>🏗 ${obraNombre}</span>
         <span class="badge">${registros.length} registro${registros.length !== 1 ? "s" : ""}</span>
       </div>
       ${filas}
@@ -222,16 +260,17 @@ function verFoto(url) {
 
 function exportarCSV() {
   const datos = getFiltrados();
-  const cab   = "Empleado,Tipo,Fecha,Hora,Lugar,Verificacion,Latitud,Longitud\n";
+  const cab   = "Empleado,Obra,Tipo,Fecha,Hora,Verificacion,Latitud,Longitud\n";
   const filas = datos.map(r => {
     const d     = new Date(r.hora);
     const lugar = (r.lugar || "").replace(/"/g, '""');
+    const obra  = obras.find(o => o.nombre === r.lugar);
     let verif   = "Sin zona";
-    if (zona && r.lat != null) {
-      const dist = Math.round(distanciaMetros(zona.lat, zona.lng, r.lat, r.lng));
-      verif = dist <= zona.radio ? `En zona (${dist}m)` : `Fuera de zona (${dist}m)`;
+    if (obra && obra.lat != null && r.lat != null) {
+      const dist = Math.round(distanciaMetros(obra.lat, obra.lng, r.lat, r.lng));
+      verif = dist <= obra.radio ? `En zona (${dist}m)` : `Fuera de zona (${dist}m)`;
     }
-    return `"${r.empleado}","${r.tipo}","${d.toLocaleDateString("es-AR")}","${d.toLocaleTimeString("es-AR")}","${lugar}","${verif}",${r.lat},${r.lng}`;
+    return `"${r.empleado}","${lugar}","${r.tipo}","${d.toLocaleDateString("es-AR")}","${d.toLocaleTimeString("es-AR")}","${verif}",${r.lat},${r.lng}`;
   }).join("\n");
 
   const blob = new Blob(["﻿" + cab + filas], { type: "text/csv;charset=utf-8" });
@@ -245,23 +284,18 @@ function exportarCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ── Eliminar registro ─────────────────────────────────────
+
 async function eliminar(id) {
   if (!confirm("¿Eliminar este registro?")) return;
 
   const { error } = await db.from("asistencias").delete().eq("id", id);
-
-  if (error) {
-    alert("Error al eliminar.");
-    return;
-  }
+  if (error) { alert("Error al eliminar."); return; }
 
   todos = todos.filter(r => r.id !== id);
-
-  // Quitar las filas del DOM sin re-renderizar todo
   document.getElementById(`row-${id}`)?.remove();
   document.getElementById(`fila-${id}`)?.remove();
 
-  // Si el bloque del empleado quedó vacío, quitarlo
   document.querySelectorAll(".empleado-bloque").forEach(bloque => {
     if (!bloque.querySelectorAll(".registro-fila").length) bloque.remove();
   });
@@ -283,5 +317,4 @@ function cerrarSesion() {
 
 // ── Init ──────────────────────────────────────────────────
 
-actualizarLabelZona();
 cargarDatos();

@@ -60,47 +60,48 @@
       border-radius: 6px; font-size: 13px; width: 170px;
     }
 
-    /* Zona de obra */
-    .zona-card {
+    /* Gestión de obras */
+    .obras-section {
       background: #fff; border-radius: 8px; margin-bottom: 16px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1); overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
     }
 
-    .zona-card summary {
+    .obras-header {
       background: #37474f; color: #fff;
-      padding: 11px 16px; cursor: pointer;
+      padding: 11px 16px;
       font-size: 13px; font-weight: bold;
-      display: flex; align-items: center; gap: 10px;
-      list-style: none;
+      display: flex; align-items: center; justify-content: space-between;
     }
 
-    .zona-card summary::-webkit-details-marker { display: none; }
-
-    .zona-activa {
-      background: #2e7d32; color: #fff;
-      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: normal;
-    }
-
-    .zona-inactiva {
-      background: rgba(255,255,255,0.25); color: #fff;
-      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: normal;
-    }
-
-    .zona-body {
+    .nueva-obra-form {
       padding: 14px 16px;
       display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+      border-bottom: 1px solid #f0f0f0;
     }
 
-    .zona-body label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+    .nueva-obra-form label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
 
-    .zona-body input[type="text"],
-    .zona-body input[type="number"] {
+    .nueva-obra-form input[type="text"],
+    .nueva-obra-form input[type="number"] {
       padding: 7px 10px; border: 1px solid #ccc;
       border-radius: 6px; font-size: 13px;
     }
 
-    .zona-body input[type="text"]   { width: 180px; }
-    .zona-body input[type="number"] { width: 130px; }
+    .nueva-obra-form input[type="text"]   { width: 180px; }
+    .nueva-obra-form input[type="number"] { width: 130px; }
+
+    .obra-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid #f5f5f5; font-size: 13px;
+    }
+
+    .obra-item:last-child { border-bottom: none; }
+
+    .obra-info { display: flex; flex-direction: column; gap: 2px; }
+    .obra-nombre { font-weight: 600; color: #1a1a2e; }
+    .obra-coords { font-size: 11px; color: #999; }
+
+    .empleado-nombre { font-weight: 600; color: #1a1a2e; min-width: 100px; }
 
     /* Badges verificación */
     .v-ok   {
@@ -267,15 +268,15 @@
       </div>
     </div>
 
-    <!-- Zona de obra -->
-    <details class="zona-card" id="zona-details">
-      <summary>
-        ⚙ Zona de obra
-        <span id="zona-label" class="zona-inactiva">Sin zona configurada</span>
-      </summary>
-      <div class="zona-body">
+    <!-- Gestión de obras -->
+    <div class="obras-section">
+      <div class="obras-header">
+        <span>⚙ Obras</span>
+        <button class="btn btn-gris" onclick="toggleNuevaObra()">+ Nueva obra</button>
+      </div>
+      <div id="nueva-obra-form" style="display:none" class="nueva-obra-form">
         <div>
-          <label>Nombre de la zona</label>
+          <label>Nombre de la obra</label>
           <input type="text" id="z-nombre" placeholder="Ej: Obra Yani">
         </div>
         <div>
@@ -291,12 +292,12 @@
           <input type="number" id="z-radio" value="200">
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-gris"    onclick="usarMiUbicacion()">Mi ubicación</button>
-          <button class="btn btn-verde"   onclick="guardarZona()">Guardar zona</button>
-          <button class="btn btn-naranja" onclick="borrarZona()">Borrar zona</button>
+          <button class="btn btn-gris"  onclick="usarMiUbicacion()">Mi ubicación</button>
+          <button class="btn btn-verde" onclick="agregarObra()">Guardar obra</button>
         </div>
       </div>
-    </details>
+      <div id="obras-lista"></div>
+    </div>
 
     <!-- Filtros -->
     <div class="filtros">
@@ -324,7 +325,7 @@
             <th>Tipo</th>
             <th>Fecha</th>
             <th>Hora</th>
-            <th>Lugar declarado</th>
+            <th>Obra</th>
             <th>Verificación GPS</th>
             <th>Mapa</th>
             <th></th>
@@ -336,8 +337,8 @@
       </table>
     </div>
 
-    <!-- Lista por empleado -->
-    <div class="lista-titulo">Registros por empleado</div>
+    <!-- Lista por obra -->
+    <div class="lista-titulo">Registros por obra</div>
     <div id="lista-empleados"></div>
 
   </div>

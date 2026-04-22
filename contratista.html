@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Obra</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { font-family: Arial, sans-serif; background: #f0f0f0; color: #333; }
+
+    header {
+      background: #1a1a2e; color: #fff;
+      padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+
+    .header-sub { font-size: 11px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+    header h1   { font-size: 18px; font-weight: bold; }
+
+    .btn {
+      padding: 8px 14px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: bold; cursor: pointer;
+    }
+
+    .btn-gris  { background: #555; color: #fff; }
+    .btn-verde { background: #2e7d32; color: #fff; }
+
+    .contenido { max-width: 1000px; margin: 0 auto; padding: 16px; }
+
+    .resumen { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+
+    .card-stat {
+      flex: 1; min-width: 100px; background: #fff; border-radius: 8px;
+      padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-stat .numero { font-size: 28px; font-weight: bold; }
+    .card-stat .label  { font-size: 12px; color: #888; margin-top: 2px; }
+    .verde { color: #2e7d32; }
+    .rojo  { color: #c62828; }
+    .gris  { color: #555; }
+
+    .filtros {
+      background: #fff; border-radius: 8px; padding: 12px 16px;
+      margin-bottom: 16px; display: flex; gap: 10px;
+      flex-wrap: wrap; align-items: flex-end;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .filtros label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+
+    .filtros input {
+      padding: 7px 10px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 13px; width: 170px;
+    }
+
+    .lista-titulo {
+      font-size: 15px; font-weight: bold; color: #1a1a2e;
+      margin-bottom: 12px; padding-bottom: 6px;
+      border-bottom: 2px solid #1a1a2e;
+    }
+
+    .empleado-bloque {
+      background: #fff; border-radius: 8px; margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
+    }
+
+    .empleado-header {
+      background: #1a1a2e; color: #fff;
+      padding: 10px 16px; font-size: 14px; font-weight: bold;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .empleado-header .badge {
+      background: rgba(255,255,255,0.2); border-radius: 12px;
+      padding: 2px 10px; font-size: 12px; font-weight: normal;
+    }
+
+    .registro-fila {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px; border-bottom: 1px solid #f0f0f0;
+      font-size: 13px; flex-wrap: wrap;
+    }
+
+    .registro-fila:last-child { border-bottom: none; }
+    .registro-fila .fecha { color: #888; white-space: nowrap; }
+
+    .tipo-ingreso { color: #2e7d32; font-weight: bold; white-space: nowrap; min-width: 80px; }
+    .tipo-salida  { color: #c62828; font-weight: bold; white-space: nowrap; min-width: 80px; }
+
+    .foto-thumb {
+      width: 52px; height: 52px; object-fit: cover;
+      border-radius: 8px; border: 1px solid #e0e0e0;
+      cursor: pointer; flex-shrink: 0; transition: opacity 0.15s;
+    }
+
+    .foto-thumb:hover { opacity: 0.85; }
+
+    .foto-none {
+      width: 52px; height: 52px; border-radius: 8px;
+      border: 1px dashed #ddd; display: flex; align-items: center;
+      justify-content: center; font-size: 18px; color: #ccc; flex-shrink: 0;
+    }
+
+    a { color: #1565c0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .v-ok   {
+      display: inline-block; background: #e8f5e9; color: #2e7d32;
+      border: 1px solid #a5d6a7; border-radius: 12px;
+      padding: 2px 9px; font-size: 11px; font-weight: bold; white-space: nowrap;
+    }
+
+    .v-fail {
+      display: inline-block; background: #ffebee; color: #c62828;
+      border: 1px solid #ef9a9a; border-radius: 12px;
+      padding: 2px 9px; font-size: 11px; font-weight: bold; white-space: nowrap;
+    }
+
+    .v-none { display: inline-block; color: #bbb; font-size: 11px; white-space: nowrap; }
+
+    #lightbox {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88); z-index: 999;
+      align-items: center; justify-content: center; cursor: pointer;
+    }
+
+    #lightbox img {
+      max-width: 94vw; max-height: 90vh;
+      border-radius: 10px; object-fit: contain;
+    }
+
+    #error-msg {
+      text-align: center; padding: 60px 20px;
+      color: #888; font-size: 16px;
+    }
+
+    @media print {
+      .filtros, header .btn { display: none !important; }
+      body { background: #fff; }
+      header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+      .header-sub { color: #666; }
+      .empleado-bloque { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="header-sub">Panel de Asistencia</div>
+      <h1 id="obra-titulo">Cargando...</h1>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-gris"  onclick="cargarRegistros()">Actualizar</button>
+      <button class="btn btn-verde" onclick="window.print()">Imprimir</button>
+    </div>
+  </header>
+
+  <div class="contenido" id="contenido" style="display:none">
+
+    <div class="resumen">
+      <div class="card-stat">
+        <div class="numero gris" id="cnt-total">—</div>
+        <div class="label">Total registros</div>
+      </div>
+      <div class="card-stat">
+        <div class="numero verde" id="cnt-ingresos">—</div>
+        <div class="label">Ingresos</div>
+      </div>
+      <div class="card-stat">
+        <div class="numero rojo" id="cnt-salidas">—</div>
+        <div class="label">Salidas</div>
+      </div>
+    </div>
+
+    <div class="filtros">
+      <div>
+        <label>Empleado</label>
+        <input type="text" id="f-nombre" placeholder="Buscar por nombre" oninput="aplicarFiltros()">
+      </div>
+      <div>
+        <label>Desde</label>
+        <input type="date" id="f-desde" onchange="aplicarFiltros()">
+      </div>
+      <div>
+        <label>Hasta</label>
+        <input type="date" id="f-hasta" onchange="aplicarFiltros()">
+      </div>
+      <button class="btn btn-gris" onclick="limpiarFiltros()">Limpiar</button>
+    </div>
+
+    <div class="lista-titulo" id="lista-titulo">Registros</div>
+    <div id="lista-empleados"></div>
+
+  </div>
+
+  <div id="error-msg" style="display:none"></div>
+
+  <div id="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" alt="Foto">
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="contratista.js"></script>
+
+</body>
+</html>

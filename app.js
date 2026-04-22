@@ -45,6 +45,24 @@ function esperarGPS() {
   });
 }
 
+// ── Obras ─────────────────────────────────────────────────
+async function cargarObras() {
+  const sel = document.getElementById("lugar");
+  const { data, error } = await db.from("obras").select("nombre").order("nombre");
+  sel.innerHTML = '<option value="">Seleccioná la obra...</option>';
+  if (!error && data && data.length) {
+    data.forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o.nombre;
+      opt.textContent = o.nombre;
+      sel.appendChild(opt);
+    });
+  } else if (!error) {
+    sel.innerHTML = '<option value="">Sin obras configuradas</option>';
+  }
+}
+cargarObras();
+
 // ── Cámara ────────────────────────────────────────────────
 async function iniciarStream() {
   if (stream) stream.getTracks().forEach(t => t.stop());
@@ -133,7 +151,7 @@ async function marcar(tipo) {
   const btnSalida  = document.getElementById("btn-salida");
 
   if (!empleado)  { mostrarMensaje("Ingresá tu nombre primero", "error"); return; }
-  if (!lugar)     { mostrarMensaje("Ingresá el lugar", "error"); return; }
+  if (!lugar)     { mostrarMensaje("Seleccioná la obra", "error"); return; }
   if (!fotoFile)  { mostrarMensaje("Sacá una foto antes de registrar", "error"); return; }
 
   btnIngreso.disabled = true;
