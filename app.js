@@ -12,10 +12,10 @@ let facingMode  = "environment"; // "environment" = trasera, "user" = frontal
 // ── Reloj ─────────────────────────────────────────────────
 setInterval(() => {
   document.getElementById("hora").textContent =
-    new Date().toLocaleTimeString("es-AR");
+    new Date().toLocaleTimeString("es-AR", { hour12: false });
 }, 1000);
 document.getElementById("hora").textContent =
-  new Date().toLocaleTimeString("es-AR");
+  new Date().toLocaleTimeString("es-AR", { hour12: false });
 
 // ── GPS ───────────────────────────────────────────────────
 navigator.geolocation.getCurrentPosition(
@@ -204,7 +204,7 @@ async function marcar(tipo) {
   if (error) {
     mostrarMensaje("Error al guardar ✗", "error");
   } else {
-    const hora = new Date().toLocaleTimeString("es-AR");
+    const hora = new Date().toLocaleTimeString("es-AR", { hour12: false });
     mostrarMensaje(
       `${tipo === "ingreso" ? "Ingreso" : "Salida"} registrado a las ${hora} ✓`,
       "ok"

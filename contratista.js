@@ -122,7 +122,7 @@ function renderLista(datos) {
         <div class="registro-fila">
           ${fotoHtml}
           <span class="tipo-${r.tipo}">${icono} ${label}</span>
-          <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR")}</span>
+          <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR", { hour12: false })}</span>
           <a href="${mapsUrl}" target="_blank" rel="noopener" style="font-size:13px">📍 Ver mapa</a>
           ${badgeVerificacion(r)}
         </div>`;

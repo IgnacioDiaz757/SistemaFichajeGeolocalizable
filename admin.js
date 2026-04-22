@@ -190,7 +190,7 @@ function renderTabla(datos) {
       <td class="nowrap">${r.empleado}</td>
       <td class="tipo-${r.tipo}">${icono} ${label}</td>
       <td class="nowrap">${d.toLocaleDateString("es-AR")}</td>
-      <td class="nowrap">${d.toLocaleTimeString("es-AR")}</td>
+      <td class="nowrap">${d.toLocaleTimeString("es-AR", { hour12: false })}</td>
       <td>${r.lugar || "—"}</td>
       <td>${badgeVerificacion(r)}</td>
       <td class="nowrap"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></td>
@@ -231,7 +231,7 @@ function renderListaPorObra(datos) {
           ${fotoHtml}
           <span class="empleado-nombre">${r.empleado}</span>
           <span class="tipo-${r.tipo}">${icono} ${label}</span>
-          <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR")}</span>
+          <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR", { hour12: false })}</span>
           <span class="dir"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></span>
           ${badgeVerificacion(r)}
           <button class="btn-del" onclick="eliminar(${r.id})">✕</button>
@@ -270,7 +270,7 @@ function exportarCSV() {
       const dist = Math.round(distanciaMetros(obra.lat, obra.lng, r.lat, r.lng));
       verif = dist <= obra.radio ? `En zona (${dist}m)` : `Fuera de zona (${dist}m)`;
     }
-    return `"${r.empleado}","${lugar}","${r.tipo}","${d.toLocaleDateString("es-AR")}","${d.toLocaleTimeString("es-AR")}","${verif}",${r.lat},${r.lng}`;
+    return `"${r.empleado}","${lugar}","${r.tipo}","${d.toLocaleDateString("es-AR")}","${d.toLocaleTimeString("es-AR", { hour12: false })}","${verif}",${r.lat},${r.lng}`;
   }).join("\n");
 
   const blob = new Blob(["﻿" + cab + filas], { type: "text/csv;charset=utf-8" });
