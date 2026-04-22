@@ -166,8 +166,23 @@
 
     .btn-capturar:active { transform: scale(0.93); }
 
-    /* Spacer para alinear el botón central */
-    .camara-spacer { width: 90px; }
+    .btn-flip {
+      background: none;
+      border: 2px solid rgba(255,255,255,0.4);
+      color: #fff;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      font-size: 20px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-flip:active { transform: rotate(180deg); }
 
     /* Hora */
     .hora-box {
@@ -275,7 +290,7 @@
     <p class="titulo">Control de Asistencia</p>
 
     <div class="campo">
-      <label for="empleado">Nombre del asociado</label>
+      <label for="empleado">Nombre del asociado.</label>
       <input type="text" id="empleado" placeholder="Tu nombre completo" autocomplete="name">
     </div>
 
