@@ -274,6 +274,13 @@ function setEstado(msg) {
     `<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">${msg}</td></tr>`;
 }
 
+// ── Sesión ────────────────────────────────────────────────
+
+function cerrarSesion() {
+  sessionStorage.removeItem("admin_auth");
+  window.location.href = "login.html";
+}
+
 // ── Init ──────────────────────────────────────────────────
 
 actualizarLabelZona();

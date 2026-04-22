@@ -228,6 +228,25 @@
 
     #ubicacion { display: none; }
 
+    .btn-admin {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      background: rgba(255,255,255,0.85);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     @media (max-width: 360px) {
       .card { padding: 24px 16px 22px; }
       .hora-valor { font-size: 19px; }
@@ -236,6 +255,8 @@
   </style>
 </head>
 <body>
+
+  <a href="login.html" class="btn-admin" title="Acceso admin">🔒</a>
 
   <!-- Modal cámara -->
   <div id="camara-modal">
