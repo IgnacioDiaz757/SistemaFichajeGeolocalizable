@@ -3,10 +3,11 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let lat      = null;
-let lng      = null;
-let fotoFile = null;
-let stream   = null;
+let lat         = null;
+let lng         = null;
+let fotoFile    = null;
+let stream      = null;
+let facingMode  = "environment"; // "environment" = trasera, "user" = frontal
 
 // ── Reloj ─────────────────────────────────────────────────
 setInterval(() => {
@@ -45,6 +46,16 @@ function esperarGPS() {
 }
 
 // ── Cámara ────────────────────────────────────────────────
+async function iniciarStream() {
+  if (stream) stream.getTracks().forEach(t => t.stop());
+
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode, width: { ideal: 1280 }, height: { ideal: 960 } },
+    audio: false
+  });
+  document.getElementById("camara-video").srcObject = stream;
+}
+
 async function abrirCamara() {
   const seguro = location.protocol === "https:" ||
                  location.hostname  === "localhost" ||
@@ -52,11 +63,8 @@ async function abrirCamara() {
 
   if (seguro && navigator.mediaDevices?.getUserMedia) {
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 960 } },
-        audio: false
-      });
-      document.getElementById("camara-video").srcObject = stream;
+      facingMode = "environment";
+      await iniciarStream();
       document.getElementById("camara-modal").style.display = "flex";
       return;
     } catch {
@@ -66,6 +74,16 @@ async function abrirCamara() {
 
   // Fallback: input file con capture (abre cámara directa en Android)
   document.getElementById("foto-input").click();
+}
+
+async function flipCamara() {
+  facingMode = facingMode === "environment" ? "user" : "environment";
+  try {
+    await iniciarStream();
+  } catch {
+    // si la cámara solicitada no existe, revertir
+    facingMode = facingMode === "environment" ? "user" : "environment";
+  }
 }
 
 // Fallback: cuando el usuario elige foto con el input
