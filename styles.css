@@ -1,23 +1,63 @@
+/* ── Variables de tema ─────────────────────────────────── */
+:root {
+  --bg:          #eef0f4;
+  --card:        #ffffff;
+  --shadow:      0 4px 24px rgba(0,0,0,0.10);
+  --text:        #222222;
+  --muted:       #888888;
+  --label:       #999999;
+  --placeholder: #aaaaaa;
+  --border:      #e0e0e0;
+  --border-foto: #d0d0d0;
+  --input-bg:    #fafafa;
+  --input-focus: #ffffff;
+  --hora-bg:     #1a1a2e;
+  --btn-float:   rgba(255,255,255,0.85);
+  --btn-float-shadow: rgba(0,0,0,0.15);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] {
+  --bg:          #0e1117;
+  --card:        #1a1f2e;
+  --shadow:      0 4px 24px rgba(0,0,0,0.40);
+  --text:        #e8e8f0;
+  --muted:       #9ca3af;
+  --label:       #6b7280;
+  --placeholder: #4b5563;
+  --border:      #2d3748;
+  --border-foto: #2d3748;
+  --input-bg:    #111827;
+  --input-focus: #1a1f2e;
+  --hora-bg:     #080b12;
+  --btn-float:   rgba(26,31,46,0.92);
+  --btn-float-shadow: rgba(0,0,0,0.40);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-  background: #eef0f4;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px 16px;
+  transition: background 0.2s, color 0.2s;
 }
 
 .card {
-  background: #fff;
+  background: var(--card);
   border-radius: 20px;
   padding: 32px 24px 28px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  box-shadow: var(--shadow);
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .logo {
@@ -30,7 +70,7 @@ body {
   text-align: center;
   font-size: 15px;
   font-weight: 600;
-  color: #888;
+  color: var(--muted);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 28px;
@@ -42,7 +82,7 @@ label {
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: #999;
+  color: var(--label);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   margin-bottom: 6px;
@@ -51,48 +91,48 @@ label {
 input[type="text"] {
   width: 100%;
   padding: 13px 14px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 16px;
-  color: #222;
-  background: #fafafa;
+  color: var(--text);
+  background: var(--input-bg);
   outline: none;
   transition: border-color 0.15s, background 0.15s;
   appearance: none;
   -webkit-appearance: none;
 }
 
-input[type="text"]:focus { border-color: #1a1a2e; background: #fff; }
+input[type="text"]:focus { border-color: #1a1a2e; background: var(--input-focus); }
 
 select {
   width: 100%;
   padding: 13px 14px;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid var(--border);
   border-radius: 10px;
   font-size: 16px;
-  color: #222;
-  background: #fafafa;
+  color: var(--text);
+  background: var(--input-bg);
   outline: none;
   transition: border-color 0.15s, background 0.15s;
   appearance: none;
   -webkit-appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-image: var(--select-arrow);
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px;
   cursor: pointer;
 }
 
-select:focus { border-color: #1a1a2e; background-color: #fff; }
+select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
 
 /* Área de foto */
 .foto-area {
   width: 100%;
-  border: 2px dashed #d0d0d0;
+  border: 2px dashed var(--border-foto);
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
-  background: #fafafa;
+  background: var(--input-bg);
   -webkit-tap-highlight-color: transparent;
   transition: border-color 0.15s;
 }
@@ -106,7 +146,7 @@ select:focus { border-color: #1a1a2e; background-color: #fff; }
   justify-content: center;
   gap: 6px;
   padding: 28px 16px;
-  color: #aaa;
+  color: var(--placeholder);
 }
 
 .foto-placeholder .icono { font-size: 32px; }
@@ -215,7 +255,7 @@ select:focus { border-color: #1a1a2e; background-color: #fff; }
 
 /* Hora */
 .hora-box {
-  background: #1a1a2e;
+  background: var(--hora-bg);
   border-radius: 10px;
   padding: 12px 16px;
   margin-bottom: 24px;
@@ -263,7 +303,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
   text-align: center;
   font-size: 14px;
   min-height: 20px;
-  color: #888;
+  color: var(--muted);
   line-height: 1.5;
 }
 
@@ -272,24 +312,29 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 #ubicacion { display: none; }
 
-.btn-admin {
+/* Botones flotantes (candado + tema) */
+.btn-admin,
+.btn-tema {
   position: fixed;
   top: 14px;
-  right: 16px;
-  background: rgba(255,255,255,0.85);
+  background: var(--btn-float);
   border: none;
   border-radius: 50%;
   width: 36px;
   height: 36px;
   font-size: 16px;
   cursor: pointer;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 6px var(--btn-float-shadow);
   display: flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s;
 }
+
+.btn-admin { right: 16px; }
+.btn-tema  { left: 16px; }
 
 @media (max-width: 360px) {
   .card { padding: 24px 16px 22px; }

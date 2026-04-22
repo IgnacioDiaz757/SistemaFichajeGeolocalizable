@@ -1,3 +1,20 @@
+// ── Tema ──────────────────────────────────────────────────
+function toggleTema() {
+  const html   = document.documentElement;
+  const isDark = html.getAttribute("data-theme") === "dark";
+  html.setAttribute("data-theme", isDark ? "light" : "dark");
+  localStorage.setItem("theme", isDark ? "light" : "dark");
+  actualizarIconTema();
+}
+
+function actualizarIconTema() {
+  const btn = document.getElementById("btn-tema");
+  if (!btn) return;
+  btn.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+}
+
+actualizarIconTema();
+
 const SUPABASE_URL = "https://nybbcnuhdoldqqixgugv.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55YmJjbnVoZG9sZHFxaXhndWd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MzIzNTQsImV4cCI6MjA5MjQwODM1NH0.G-vLF24JimiiJZ827S6v4JY3e274iFfXcrr7Pxqq9wk";
 

@@ -4,13 +4,48 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin - Asistencia Obra</title>
+  <script>if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark");</script>
   <style>
+    :root {
+      --bg:        #f0f0f0;
+      --surface:   #ffffff;
+      --surface2:  #f9f9f9;
+      --header-bg: #1a1a2e;
+      --thead-bg:  #1a1a2e;
+      --text:      #333333;
+      --text-muted:#888888;
+      --text-label:#666666;
+      --border:    #cccccc;
+      --border-lt: #eeeeee;
+      --row-alt:   #f9f9f9;
+      --row-hover: #eef2ff;
+      --input-bg:  #ffffff;
+      --zone-bg:   #37474f;
+    }
+
+    [data-theme="dark"] {
+      --bg:        #0e1117;
+      --surface:   #1a1f2e;
+      --surface2:  #141921;
+      --header-bg: #080b12;
+      --thead-bg:  #080b12;
+      --text:      #e0e0e8;
+      --text-muted:#9ca3af;
+      --text-label:#6b7280;
+      --border:    #2d3748;
+      --border-lt: #1e2433;
+      --row-alt:   #141921;
+      --row-hover: #1e2a3a;
+      --input-bg:  #111827;
+      --zone-bg:   #1e2533;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body { font-family: Arial, sans-serif; background: #f0f0f0; color: #333; }
+    body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); transition: background 0.2s, color 0.2s; }
 
     header {
-      background: #1a1a2e; color: #fff;
+      background: var(--header-bg); color: #fff;
       padding: 14px 20px;
       display: flex; justify-content: space-between; align-items: center;
       flex-wrap: wrap; gap: 10px;
@@ -35,39 +70,40 @@
     .resumen { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 
     .card-stat {
-      flex: 1; min-width: 100px; background: #fff; border-radius: 8px;
+      flex: 1; min-width: 100px; background: var(--surface); border-radius: 8px;
       padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
     }
 
     .card-stat .numero { font-size: 28px; font-weight: bold; }
-    .card-stat .label  { font-size: 12px; color: #888; margin-top: 2px; }
+    .card-stat .label  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
     .verde { color: #2e7d32; }
     .rojo  { color: #c62828; }
-    .gris  { color: #555; }
+    .gris  { color: var(--text-muted); }
 
     /* Filtros */
     .filtros {
-      background: #fff; border-radius: 8px; padding: 12px 16px;
+      background: var(--surface); border-radius: 8px; padding: 12px 16px;
       margin-bottom: 16px; display: flex; gap: 10px;
       flex-wrap: wrap; align-items: flex-end;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
 
-    .filtros label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+    .filtros label { font-size: 12px; color: var(--text-label); display: block; margin-bottom: 3px; }
 
     .filtros input {
-      padding: 7px 10px; border: 1px solid #ccc;
+      padding: 7px 10px; border: 1px solid var(--border);
       border-radius: 6px; font-size: 13px; width: 170px;
+      background: var(--input-bg); color: var(--text);
     }
 
     /* Gestión de obras */
     .obras-section {
-      background: #fff; border-radius: 8px; margin-bottom: 16px;
+      background: var(--surface); border-radius: 8px; margin-bottom: 16px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
     }
 
     .obras-header {
-      background: #37474f; color: #fff;
+      background: var(--zone-bg); color: #fff;
       padding: 11px 16px;
       font-size: 13px; font-weight: bold;
       display: flex; align-items: center; justify-content: space-between;
@@ -76,15 +112,16 @@
     .nueva-obra-form {
       padding: 14px 16px;
       display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--border-lt);
     }
 
-    .nueva-obra-form label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+    .nueva-obra-form label { font-size: 12px; color: var(--text-label); display: block; margin-bottom: 3px; }
 
     .nueva-obra-form input[type="text"],
     .nueva-obra-form input[type="number"] {
-      padding: 7px 10px; border: 1px solid #ccc;
+      padding: 7px 10px; border: 1px solid var(--border);
       border-radius: 6px; font-size: 13px;
+      background: var(--input-bg); color: var(--text);
     }
 
     .nueva-obra-form input[type="text"]   { width: 180px; }
@@ -92,16 +129,16 @@
 
     .obra-item {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px; border-bottom: 1px solid #f5f5f5; font-size: 13px;
+      padding: 10px 16px; border-bottom: 1px solid var(--border-lt); font-size: 13px;
     }
 
     .obra-item:last-child { border-bottom: none; }
 
     .obra-info { display: flex; flex-direction: column; gap: 2px; }
-    .obra-nombre { font-weight: 600; color: #1a1a2e; }
-    .obra-coords { font-size: 11px; color: #999; }
+    .obra-nombre { font-weight: 600; color: var(--text); }
+    .obra-coords { font-size: 11px; color: var(--text-muted); }
 
-    .empleado-nombre { font-weight: 600; color: #1a1a2e; min-width: 100px; }
+    .empleado-nombre { font-weight: 600; color: var(--text); min-width: 100px; }
 
     /* Badges verificación */
     .v-ok   {
@@ -123,7 +160,7 @@
 
     /* Tabla */
     .tabla-wrap {
-      background: #fff; border-radius: 8px; overflow: hidden;
+      background: var(--surface); border-radius: 8px; overflow: hidden;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1); overflow-x: auto;
       margin-bottom: 24px;
     }
@@ -131,13 +168,13 @@
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
 
     thead th {
-      background: #1a1a2e; color: #fff;
+      background: var(--thead-bg); color: #fff;
       padding: 10px 14px; text-align: left; white-space: nowrap;
     }
 
-    tbody tr:nth-child(even) { background: #f9f9f9; }
-    tbody tr:hover { background: #eef2ff; }
-    tbody td { padding: 9px 14px; border-bottom: 1px solid #eee; }
+    tbody tr:nth-child(even) { background: var(--row-alt); }
+    tbody tr:hover { background: var(--row-hover); }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid var(--border-lt); color: var(--text); }
     td.nowrap { white-space: nowrap; }
 
     .tipo-ingreso { color: #2e7d32; font-weight: bold; white-space: nowrap; }
@@ -146,20 +183,20 @@
     a { color: #1565c0; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    /* Lista por empleado */
+    /* Lista por obra */
     .lista-titulo {
-      font-size: 15px; font-weight: bold; color: #1a1a2e;
+      font-size: 15px; font-weight: bold; color: var(--text);
       margin-bottom: 12px; padding-bottom: 6px;
-      border-bottom: 2px solid #1a1a2e;
+      border-bottom: 2px solid var(--header-bg);
     }
 
     .empleado-bloque {
-      background: #fff; border-radius: 8px; margin-bottom: 12px;
+      background: var(--surface); border-radius: 8px; margin-bottom: 12px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
     }
 
     .empleado-header {
-      background: #1a1a2e; color: #fff;
+      background: var(--header-bg); color: #fff;
       padding: 10px 16px; font-size: 14px; font-weight: bold;
       display: flex; justify-content: space-between; align-items: center;
     }
@@ -171,34 +208,29 @@
 
     .registro-fila {
       display: flex; align-items: center; gap: 10px;
-      padding: 9px 16px; border-bottom: 1px solid #f0f0f0;
+      padding: 9px 16px; border-bottom: 1px solid var(--border-lt);
       font-size: 13px; flex-wrap: wrap;
     }
 
     .registro-fila:last-child { border-bottom: none; }
     .registro-fila .tipo-ingreso,
     .registro-fila .tipo-salida { min-width: 80px; }
-    .registro-fila .fecha { color: #888; white-space: nowrap; }
-    .registro-fila .dir   { color: #333; flex: 1; }
+    .registro-fila .fecha { color: var(--text-muted); white-space: nowrap; }
+    .registro-fila .dir   { color: var(--text); flex: 1; }
 
     .foto-thumb {
-      width: 52px;
-      height: 52px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 1px solid #e0e0e0;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: opacity 0.15s;
+      width: 52px; height: 52px; object-fit: cover;
+      border-radius: 8px; border: 1px solid var(--border);
+      cursor: pointer; flex-shrink: 0; transition: opacity 0.15s;
     }
 
     .foto-thumb:hover { opacity: 0.85; }
 
     .foto-none {
-      width: 52px; height: 52px;
-      border-radius: 8px; border: 1px dashed #ddd;
+      width: 52px; height: 52px; border-radius: 8px;
+      border: 1px dashed var(--border);
       display: flex; align-items: center; justify-content: center;
-      font-size: 18px; color: #ccc; flex-shrink: 0;
+      font-size: 18px; color: var(--text-muted); flex-shrink: 0;
     }
 
     /* Lightbox */
@@ -220,7 +252,7 @@
     }
 
     .btn-del {
-      background: none; border: 1px solid #e0e0e0; color: #bbb;
+      background: none; border: 1px solid var(--border); color: var(--text-muted);
       border-radius: 5px; padding: 2px 8px; font-size: 13px;
       cursor: pointer; transition: all 0.15s; flex-shrink: 0;
     }
@@ -270,6 +302,7 @@
   <header>
     <h1>Panel de Asistencia — Obra</h1>
     <div class="acciones">
+      <button class="btn btn-gris" id="btn-tema-admin" onclick="toggleTemaAdmin()" title="Cambiar tema"></button>
       <button class="btn btn-gris"  onclick="cargarDatos()">Actualizar</button>
       <button class="btn btn-azul"  onclick="exportarCSV()">Exportar CSV</button>
       <button class="btn btn-verde" onclick="window.print()">Imprimir</button>
@@ -376,10 +409,22 @@
   </div>
 
   <script>
-    // Verificar sesión antes de cargar el panel
-    if (sessionStorage.getItem("admin_auth") !== "ok") {
-      window.location.replace("login.html");
+    if (sessionStorage.getItem("admin_auth") !== "ok") window.location.replace("login.html");
+
+    function toggleTemaAdmin() {
+      const html   = document.documentElement;
+      const isDark = html.getAttribute("data-theme") === "dark";
+      html.setAttribute("data-theme", isDark ? "light" : "dark");
+      localStorage.setItem("theme", isDark ? "light" : "dark");
+      actualizarIconAdmin();
     }
+
+    function actualizarIconAdmin() {
+      const btn = document.getElementById("btn-tema-admin");
+      if (btn) btn.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+    }
+
+    document.addEventListener("DOMContentLoaded", actualizarIconAdmin);
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="admin.js"></script>
