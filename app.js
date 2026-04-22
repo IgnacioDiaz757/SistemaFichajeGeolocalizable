@@ -114,8 +114,9 @@ async function marcar(tipo) {
   const btnIngreso = document.getElementById("btn-ingreso");
   const btnSalida  = document.getElementById("btn-salida");
 
-  if (!empleado) { mostrarMensaje("Ingresá tu nombre primero", "error"); return; }
-  if (!lugar)    { mostrarMensaje("Ingresá el lugar", "error"); return; }
+  if (!empleado)  { mostrarMensaje("Ingresá tu nombre primero", "error"); return; }
+  if (!lugar)     { mostrarMensaje("Ingresá el lugar", "error"); return; }
+  if (!fotoFile)  { mostrarMensaje("Sacá una foto antes de registrar", "error"); return; }
 
   btnIngreso.disabled = true;
   btnSalida.disabled  = true;
