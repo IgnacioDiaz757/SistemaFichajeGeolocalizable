@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Asistencia Obra</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { font-family: Arial, sans-serif; background: #f0f0f0; color: #333; }
+
+    header {
+      background: #1a1a2e; color: #fff;
+      padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 10px;
+    }
+
+    header h1 { font-size: 16px; font-weight: bold; }
+    .acciones  { display: flex; gap: 8px; }
+
+    .btn {
+      padding: 8px 14px; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: bold; cursor: pointer;
+    }
+
+    .btn-verde  { background: #2e7d32; color: #fff; }
+    .btn-azul   { background: #1565c0; color: #fff; }
+    .btn-gris   { background: #555;    color: #fff; }
+    .btn-naranja{ background: #e65100; color: #fff; }
+
+    .contenido { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+    /* Resumen */
+    .resumen { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+
+    .card-stat {
+      flex: 1; min-width: 100px; background: #fff; border-radius: 8px;
+      padding: 14px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .card-stat .numero { font-size: 28px; font-weight: bold; }
+    .card-stat .label  { font-size: 12px; color: #888; margin-top: 2px; }
+    .verde { color: #2e7d32; }
+    .rojo  { color: #c62828; }
+    .gris  { color: #555; }
+
+    /* Filtros */
+    .filtros {
+      background: #fff; border-radius: 8px; padding: 12px 16px;
+      margin-bottom: 16px; display: flex; gap: 10px;
+      flex-wrap: wrap; align-items: flex-end;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .filtros label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+
+    .filtros input {
+      padding: 7px 10px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 13px; width: 170px;
+    }
+
+    /* Zona de obra */
+    .zona-card {
+      background: #fff; border-radius: 8px; margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1); overflow: hidden;
+    }
+
+    .zona-card summary {
+      background: #37474f; color: #fff;
+      padding: 11px 16px; cursor: pointer;
+      font-size: 13px; font-weight: bold;
+      display: flex; align-items: center; gap: 10px;
+      list-style: none;
+    }
+
+    .zona-card summary::-webkit-details-marker { display: none; }
+
+    .zona-activa {
+      background: #2e7d32; color: #fff;
+      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: normal;
+    }
+
+    .zona-inactiva {
+      background: rgba(255,255,255,0.25); color: #fff;
+      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: normal;
+    }
+
+    .zona-body {
+      padding: 14px 16px;
+      display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;
+    }
+
+    .zona-body label { font-size: 12px; color: #666; display: block; margin-bottom: 3px; }
+
+    .zona-body input[type="text"],
+    .zona-body input[type="number"] {
+      padding: 7px 10px; border: 1px solid #ccc;
+      border-radius: 6px; font-size: 13px;
+    }
+
+    .zona-body input[type="text"]   { width: 180px; }
+    .zona-body input[type="number"] { width: 130px; }
+
+    /* Badges verificación */
+    .v-ok   {
+      display: inline-block; background: #e8f5e9; color: #2e7d32;
+      border: 1px solid #a5d6a7; border-radius: 12px;
+      padding: 2px 9px; font-size: 11px; font-weight: bold; white-space: nowrap;
+    }
+
+    .v-fail {
+      display: inline-block; background: #ffebee; color: #c62828;
+      border: 1px solid #ef9a9a; border-radius: 12px;
+      padding: 2px 9px; font-size: 11px; font-weight: bold; white-space: nowrap;
+    }
+
+    .v-none {
+      display: inline-block; color: #bbb;
+      font-size: 11px; white-space: nowrap;
+    }
+
+    /* Tabla */
+    .tabla-wrap {
+      background: #fff; border-radius: 8px; overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1); overflow-x: auto;
+      margin-bottom: 24px;
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    thead th {
+      background: #1a1a2e; color: #fff;
+      padding: 10px 14px; text-align: left; white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) { background: #f9f9f9; }
+    tbody tr:hover { background: #eef2ff; }
+    tbody td { padding: 9px 14px; border-bottom: 1px solid #eee; }
+    td.nowrap { white-space: nowrap; }
+
+    .tipo-ingreso { color: #2e7d32; font-weight: bold; white-space: nowrap; }
+    .tipo-salida  { color: #c62828; font-weight: bold; white-space: nowrap; }
+
+    a { color: #1565c0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Lista por empleado */
+    .lista-titulo {
+      font-size: 15px; font-weight: bold; color: #1a1a2e;
+      margin-bottom: 12px; padding-bottom: 6px;
+      border-bottom: 2px solid #1a1a2e;
+    }
+
+    .empleado-bloque {
+      background: #fff; border-radius: 8px; margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden;
+    }
+
+    .empleado-header {
+      background: #1a1a2e; color: #fff;
+      padding: 10px 16px; font-size: 14px; font-weight: bold;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .empleado-header .badge {
+      background: rgba(255,255,255,0.2); border-radius: 12px;
+      padding: 2px 10px; font-size: 12px; font-weight: normal;
+    }
+
+    .registro-fila {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 16px; border-bottom: 1px solid #f0f0f0;
+      font-size: 13px; flex-wrap: wrap;
+    }
+
+    .registro-fila:last-child { border-bottom: none; }
+    .registro-fila .tipo-ingreso,
+    .registro-fila .tipo-salida { min-width: 80px; }
+    .registro-fila .fecha { color: #888; white-space: nowrap; }
+    .registro-fila .dir   { color: #333; flex: 1; }
+
+    .foto-thumb {
+      width: 52px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: opacity 0.15s;
+    }
+
+    .foto-thumb:hover { opacity: 0.85; }
+
+    .foto-none {
+      width: 52px; height: 52px;
+      border-radius: 8px; border: 1px dashed #ddd;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; color: #ccc; flex-shrink: 0;
+    }
+
+    /* Lightbox */
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    #lightbox img {
+      max-width: 94vw;
+      max-height: 90vh;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+
+    .btn-del {
+      background: none; border: 1px solid #e0e0e0; color: #bbb;
+      border-radius: 5px; padding: 2px 8px; font-size: 13px;
+      cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+    }
+
+    .btn-del:hover { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
+
+    /* Print */
+    @media print {
+      header .acciones, .filtros, .zona-card { display: none !important; }
+      body { background: #fff; }
+      header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+      .card-stat { box-shadow: none; border: 1px solid #ccc; }
+      .tabla-wrap, .empleado-bloque { box-shadow: none; }
+      tbody tr:hover { background: transparent; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Panel de Asistencia — Obra</h1>
+    <div class="acciones">
+      <button class="btn btn-gris"  onclick="cargarDatos()">↺ Actualizar</button>
+      <button class="btn btn-azul"  onclick="exportarCSV()">↓ Exportar CSV</button>
+      <button class="btn btn-verde" onclick="window.print()">⎙ Imprimir</button>
+    </div>
+  </header>
+
+  <div class="contenido">
+
+    <!-- Resumen -->
+    <div class="resumen">
+      <div class="card-stat">
+        <div class="numero gris" id="cnt-total">—</div>
+        <div class="label">Total registros</div>
+      </div>
+      <div class="card-stat">
+        <div class="numero verde" id="cnt-ingresos">—</div>
+        <div class="label">Ingresos</div>
+      </div>
+      <div class="card-stat">
+        <div class="numero rojo" id="cnt-salidas">—</div>
+        <div class="label">Salidas</div>
+      </div>
+    </div>
+
+    <!-- Zona de obra -->
+    <details class="zona-card" id="zona-details">
+      <summary>
+        ⚙ Zona de obra
+        <span id="zona-label" class="zona-inactiva">Sin zona configurada</span>
+      </summary>
+      <div class="zona-body">
+        <div>
+          <label>Nombre de la zona</label>
+          <input type="text" id="z-nombre" placeholder="Ej: Obra Yani">
+        </div>
+        <div>
+          <label>Latitud</label>
+          <input type="number" id="z-lat" placeholder="-34.603722" step="any">
+        </div>
+        <div>
+          <label>Longitud</label>
+          <input type="number" id="z-lng" placeholder="-58.381592" step="any">
+        </div>
+        <div>
+          <label>Radio (metros)</label>
+          <input type="number" id="z-radio" value="200">
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gris"    onclick="usarMiUbicacion()">📍 Mi ubicación</button>
+          <button class="btn btn-verde"   onclick="guardarZona()">Guardar zona</button>
+          <button class="btn btn-naranja" onclick="borrarZona()">Borrar zona</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- Filtros -->
+    <div class="filtros">
+      <div>
+        <label>Empleado</label>
+        <input type="text" id="f-nombre" placeholder="Buscar por nombre" oninput="aplicarFiltros()">
+      </div>
+      <div>
+        <label>Desde</label>
+        <input type="date" id="f-desde" onchange="aplicarFiltros()">
+      </div>
+      <div>
+        <label>Hasta</label>
+        <input type="date" id="f-hasta" onchange="aplicarFiltros()">
+      </div>
+      <button class="btn btn-gris" onclick="limpiarFiltros()">Limpiar</button>
+    </div>
+
+    <!-- Tabla general -->
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Empleado</th>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Lugar declarado</th>
+            <th>Verificación GPS</th>
+            <th>Mapa</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Lista por empleado -->
+    <div class="lista-titulo">Registros por empleado</div>
+    <div id="lista-empleados"></div>
+
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" alt="Foto">
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js"></script>
+
+</body>
+</html>
