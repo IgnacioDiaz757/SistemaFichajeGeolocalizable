@@ -71,7 +71,9 @@ async function iniciarStream() {
     video: { facingMode, width: { ideal: 1280 }, height: { ideal: 960 } },
     audio: false
   });
-  document.getElementById("camara-video").srcObject = stream;
+  const video = document.getElementById("camara-video");
+  video.srcObject = stream;
+  video.style.transform = facingMode === "user" ? "scaleX(-1)" : "";
 }
 
 async function abrirCamara() {
@@ -117,7 +119,12 @@ function capturarFoto() {
 
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext("2d").drawImage(video, 0, 0);
+  const ctx = canvas.getContext("2d");
+  if (facingMode === "user") {
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+  }
+  ctx.drawImage(video, 0, 0);
 
   canvas.toBlob((blob) => {
     mostrarPreview(new File([blob], `foto_${Date.now()}.jpg`, { type: "image/jpeg" }));

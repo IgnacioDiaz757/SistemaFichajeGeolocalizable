@@ -229,12 +229,39 @@
 
     /* Print */
     @media print {
-      header .acciones, .filtros, .zona-card { display: none !important; }
-      body { background: #fff; }
-      header { background: #fff; color: #000; border-bottom: 2px solid #000; }
+      /* Ocultar controles */
+      header .acciones,
+      .filtros,
+      .obras-section,
+      .tabla-wrap,
+      .btn-del,
+      .btn-azul { display: none !important; }
+
+      /* Fondo blanco */
+      body, .contenido { background: #fff; }
+
+      /* Header limpio */
+      header {
+        background: #1a1a2e !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border-bottom: none;
+      }
+
+      /* Resumen */
       .card-stat { box-shadow: none; border: 1px solid #ccc; }
-      .tabla-wrap, .empleado-bloque { box-shadow: none; }
-      tbody tr:hover { background: transparent; }
+
+      /* Lista por obra */
+      .empleado-bloque { box-shadow: none; page-break-inside: avoid; }
+      .empleado-header {
+        background: #1a1a2e !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      /* Fotos más pequeñas en impresión */
+      .foto-thumb { width: 36px; height: 36px; }
+      .foto-none  { width: 36px; height: 36px; }
     }
   </style>
 </head>
