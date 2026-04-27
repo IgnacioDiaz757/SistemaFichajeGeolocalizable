@@ -30,7 +30,7 @@ async function cargarEmpleados() {
     .select("id, nombre, obra, contratista, created_at")
     .order("nombre");
 
-  const lista = document.getElementById("lista-empleados");
+  const lista = document.getElementById("lista-asociados");
 
   if (error || !data) {
     lista.innerHTML = '<p style="color:#c62828;font-size:13px">Error al cargar empleados.</p>';
