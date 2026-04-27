@@ -35,8 +35,21 @@
     <p class="titulo">Control de Asistencia</p>
 
     <div class="campo">
-      <label for="empleado">Nombre del asociado.</label>
-      <input type="text" id="empleado" placeholder="Tu nombre completo" autocomplete="name">
+      <label>Foto</label>
+      <div class="foto-area" id="foto-area" onclick="abrirCamara()">
+        <img id="foto-preview" alt="Vista previa">
+        <div class="foto-placeholder" id="foto-placeholder">
+          <span class="icono">📷</span>
+          <span>Sacar foto para identificarte</span>
+        </div>
+        <div class="foto-cambiar" id="foto-cambiar">📷 Cambiar foto</div>
+      </div>
+      <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none">
+    </div>
+
+    <div class="campo">
+      <label for="empleado">Nombre del asociado</label>
+      <input type="text" id="empleado" placeholder="Se completará automáticamente..." autocomplete="name">
     </div>
 
     <div class="campo">
@@ -44,19 +57,6 @@
       <select id="lugar">
         <option value="">Cargando obras...</option>
       </select>
-    </div>
-
-    <div class="campo">
-      <label>Foto</label>
-      <div class="foto-area" id="foto-area" onclick="abrirCamara()">
-        <img id="foto-preview" alt="Vista previa">
-        <div class="foto-placeholder" id="foto-placeholder">
-          <span class="icono">📷</span>
-          <span>Sacar foto</span>
-        </div>
-        <div class="foto-cambiar" id="foto-cambiar">📷 Cambiar foto</div>
-      </div>
-      <input type="file" id="foto-input" accept="image/*" capture="environment" style="display:none">
     </div>
 
     <div class="hora-box">

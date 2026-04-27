@@ -135,11 +135,21 @@
     <div class="seccion">
       <h2>Agregar / actualizar empleado</h2>
       <div class="fila-input">
-        <div style="flex:1">
-          <label>Nombre completo del empleado</label>
+        <div style="flex:1;min-width:200px">
+          <label>Nombre completo</label>
           <input type="text" id="inp-nombre" placeholder="Ej: Juan Pérez" autocomplete="off">
         </div>
-        <button class="btn btn-verde" onclick="abrirCamara()">📷 Registrar cara</button>
+        <div style="flex:1;min-width:180px">
+          <label>Obra asignada</label>
+          <select id="inp-obra" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px;background:var(--input-bg);color:var(--text)">
+            <option value="">Sin obra asignada</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:160px">
+          <label>Contratista</label>
+          <input type="text" id="inp-contratista" placeholder="Ej: Empresa SA" autocomplete="off">
+        </div>
+        <button class="btn btn-verde" onclick="abrirCamara()" style="align-self:flex-end">📷 Registrar cara</button>
       </div>
       <p id="estado"></p>
     </div>

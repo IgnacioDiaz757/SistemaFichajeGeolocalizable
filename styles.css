@@ -180,20 +180,44 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
   background: #000;
   z-index: 999;
   flex-direction: column;
+  overflow: hidden;
 }
 
 #camara-video {
   flex: 1;
+  min-height: 0;   /* evita que el video empuje la barra fuera de pantalla */
   width: 100%;
   object-fit: cover;
 }
 
 .camara-bar {
-  background: #000;
-  padding: 20px 32px 36px;
+  flex-shrink: 0;  /* la barra nunca se comprime */
+  background: #111;
+  padding: 16px 32px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+}
+
+/* En desktop, centrar y limitar ancho de la cámara */
+@media (min-width: 768px) {
+  #camara-modal {
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.92);
+  }
+  #camara-video {
+    max-width: 720px;
+    max-height: calc(100vh - 160px);
+    border-radius: 12px 12px 0 0;
+  }
+  .camara-bar {
+    width: 100%;
+    max-width: 720px;
+    border-radius: 0 0 12px 12px;
+    padding: 16px 48px 24px;
+  }
 }
 
 .btn-camara-cancel {

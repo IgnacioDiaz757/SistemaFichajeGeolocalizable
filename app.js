@@ -21,26 +21,33 @@ const SUPABASE_KEY = window.APP_CONFIG.SUPABASE_KEY;
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── Reconocimiento facial ─────────────────────────────────
-const MODEL_URL    = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
-let faceMatcher    = null;
-let reconocReady   = false;
+const MODEL_URL   = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
+let faceMatcher   = null;
+let reconocReady  = false;
+let modelsLoaded  = false;
+let empleadosInfo = new Map(); // nombre → { obra, contratista }
 
 async function prepararReconocimiento() {
   if (typeof faceapi === "undefined") return;
   try {
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-    ]);
-    const { data } = await db.from("empleados").select("nombre, descriptors");
+    if (!modelsLoaded) {
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+      ]);
+      modelsLoaded = true;
+    }
+    const { data } = await db.from("empleados").select("nombre, descriptors, obra, contratista");
     if (!data || !data.length) return;
-    const labeled = data.map(emp =>
-      new faceapi.LabeledFaceDescriptors(
+    empleadosInfo.clear();
+    const labeled = data.map(emp => {
+      empleadosInfo.set(emp.nombre, { obra: emp.obra || "", contratista: emp.contratista || "" });
+      return new faceapi.LabeledFaceDescriptors(
         emp.nombre,
         emp.descriptors.map(d => new Float32Array(d))
-      )
-    );
+      );
+    });
     faceMatcher  = new faceapi.FaceMatcher(labeled, 0.5);
     reconocReady = true;
   } catch { /* silencioso — la app funciona igual sin reconocimiento */ }
@@ -57,10 +64,62 @@ async function reconocerEnFoto(imgElement) {
     const match = faceMatcher.findBestMatch(det.descriptor);
     if (match.label !== "unknown") {
       document.getElementById("empleado").value = match.label;
+      // Auto-completar obra asignada
+      const info = empleadosInfo.get(match.label);
+      if (info?.obra) {
+        const sel = document.getElementById("lugar");
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === info.obra) { sel.selectedIndex = i; break; }
+        }
+      }
       mostrarMensaje(`Bienvenido, ${match.label} ✓`, "ok");
       setTimeout(() => mostrarMensaje("", ""), 3000);
     }
   } catch { /* silencioso */ }
+}
+
+// Aprende la cara del empleado desde la foto de asistencia (fire & forget)
+async function guardarCaraParaReconocimiento(nombreEmpleado, file) {
+  if (typeof faceapi === "undefined" || !file) return;
+  try {
+    if (!modelsLoaded) return; // modelos no listos, no vale la pena esperar
+    const img    = new Image();
+    const blobUrl = URL.createObjectURL(file);
+    img.src = blobUrl;
+    await new Promise(r => { img.onload = r; });
+    const det = await faceapi
+      .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
+      .withFaceLandmarks(true)
+      .withFaceDescriptor();
+    URL.revokeObjectURL(blobUrl);
+    if (!det) return;
+
+    const nuevoDescriptor = Array.from(det.descriptor);
+
+    // Mantener hasta 5 descriptores por empleado para mejor precisión
+    const { data: existente } = await db
+      .from("empleados")
+      .select("descriptors")
+      .eq("nombre", nombreEmpleado)
+      .maybeSingle();
+
+    if (existente) {
+      // Solo actualizar descriptores — obra y contratista los gestiona el admin
+      const descriptors = [...existente.descriptors, nuevoDescriptor].slice(-5);
+      await db.from("empleados").update({ descriptors }).eq("nombre", nombreEmpleado);
+    } else {
+      // Primer registro: guardar también la obra actual seleccionada
+      const obraActual = document.getElementById("lugar").value || null;
+      await db.from("empleados").insert([{
+        nombre: nombreEmpleado,
+        descriptors: [nuevoDescriptor],
+        obra: obraActual,
+      }]);
+    }
+
+    // Refrescar el matcher con los nuevos datos (modelos ya cargados, solo re-query)
+    prepararReconocimiento();
+  } catch { /* silencioso — la asistencia ya fue registrada */ }
 }
 
 // Carga modelos en segundo plano al iniciar la página
@@ -285,6 +344,8 @@ async function marcar(tipo) {
       `${tipo === "ingreso" ? "Ingreso" : "Salida"} registrado a las ${hora} ✓`,
       "ok"
     );
+    // Aprender la cara en segundo plano usando esta misma foto de asistencia
+    guardarCaraParaReconocimiento(empleado, fotoFile);
     resetFoto();
   }
 }

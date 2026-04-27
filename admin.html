@@ -279,6 +279,55 @@
       cursor: not-allowed;
     }
 
+    /* ── Mobile ─────────────────────────────────────────── */
+    @media (max-width: 640px) {
+
+      header { padding: 10px 12px; gap: 8px; }
+      header h1 { font-size: 14px; }
+
+      /* Botones del header: más pequeños y con wrap */
+      .acciones { flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+      .acciones .btn { padding: 6px 10px; font-size: 12px; }
+
+      /* Ocultar botones menos usados en mobile */
+      .acciones .btn-verde,
+      .acciones .btn-azul:first-of-type { display: none; }
+
+      .contenido { padding: 10px; }
+
+      /* Resumen: números más grandes, cards más compactas */
+      .resumen { gap: 8px; }
+      .card-stat { padding: 10px; min-width: 80px; }
+      .card-stat .numero { font-size: 24px; }
+
+      /* Filtros: cada campo ocupa todo el ancho */
+      .filtros { gap: 8px; padding: 10px 12px; }
+      .filtros > div { width: 100%; }
+      .filtros input { width: 100%; }
+      .filtros .btn { width: 100%; padding: 9px; }
+
+      /* Tabla: ocultar en mobile — la vista por obra es suficiente */
+      .tabla-wrap { display: none; }
+      #paginacion { display: none; }
+      #aviso-mobile { display: block !important; }
+
+      /* Lista por obra: más compacta */
+      .registro-fila { gap: 8px; padding: 8px 12px; }
+      .foto-thumb { width: 42px; height: 42px; }
+      .foto-none  { width: 42px; height: 42px; }
+      .empleado-nombre { font-size: 13px; }
+
+      /* Obras */
+      .nueva-obra-form input[type="text"],
+      .nueva-obra-form input[type="number"] { width: 100%; }
+      .obra-item { flex-wrap: wrap; gap: 8px; }
+    }
+
+    @media (max-width: 400px) {
+      .card-stat .numero { font-size: 20px; }
+      .empleado-header { font-size: 13px; }
+    }
+
     /* Print */
     @media print {
       /* Ocultar controles */
@@ -396,6 +445,11 @@
         <input type="date" id="f-hasta" onchange="aplicarFiltros()">
       </div>
       <button class="btn btn-gris" onclick="limpiarFiltros()">Limpiar</button>
+    </div>
+
+    <!-- Aviso mobile (solo visible en pantallas pequeñas) -->
+    <div id="aviso-mobile" style="display:none;background:var(--surface);border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--text-muted);box-shadow:0 1px 4px rgba(0,0,0,0.08)">
+      📋 La tabla completa se ve mejor en una pantalla más grande. Abajo ves los registros agrupados por obra.
     </div>
 
     <!-- Tabla general -->

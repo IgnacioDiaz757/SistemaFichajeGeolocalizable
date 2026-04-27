@@ -27,7 +27,7 @@ async function cargarModelos() {
 async function cargarEmpleados() {
   const { data, error } = await db
     .from("empleados")
-    .select("id, nombre, created_at")
+    .select("id, nombre, obra, contratista, created_at")
     .order("nombre");
 
   const lista = document.getElementById("lista-empleados");
@@ -41,12 +41,17 @@ async function cargarEmpleados() {
     return;
   }
 
-  lista.innerHTML = data.map(e => `
+  lista.innerHTML = data.map(e => {
+    const sub = [e.obra, e.contratista].filter(Boolean).join(" · ");
+    return `
     <div class="empleado-item">
-      <span class="empleado-nombre">👤 ${e.nombre}</span>
+      <div>
+        <span class="empleado-nombre">👤 ${e.nombre}</span>
+        ${sub ? `<span style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">${sub}</span>` : ""}
+      </div>
       <button class="btn-del" onclick="eliminarEmpleado('${e.id}', '${e.nombre.replace(/'/g, "\\'")}')">✕ Eliminar</button>
-    </div>
-  `).join("");
+    </div>`;
+  }).join("");
 }
 
 async function eliminarEmpleado(id, nombre) {
@@ -181,19 +186,29 @@ function actualizarProgreso() {
 // ── Guardar ───────────────────────────────────────────────
 
 async function guardarEmpleado() {
-  const nombre = document.getElementById("inp-nombre").value.trim();
+  const nombre      = document.getElementById("inp-nombre").value.trim();
+  const obra        = document.getElementById("inp-obra").value || null;
+  const contratista = document.getElementById("inp-contratista").value.trim() || null;
 
   const { error } = await db.from("empleados").upsert(
-    [{ nombre, descriptors: descriptoresCapturados }],
+    [{ nombre, descriptors: descriptoresCapturados, obra, contratista }],
     { onConflict: "nombre" }
   );
 
   if (error) {
-    setEstado("Error al guardar. Intentá de nuevo.", "error");
+    if (error.code === "42P01") {
+      setEstado("La tabla 'empleados' no existe en Supabase. Creala con el SQL del paso de configuración.", "error");
+    } else if (error.code === "42501" || error.message?.includes("policy")) {
+      setEstado("Sin permisos para guardar. Revisá las políticas RLS de Supabase o deshabilitá RLS en la tabla 'empleados'.", "error");
+    } else {
+      setEstado(`Error al guardar: ${error.message}`, "error");
+    }
     return;
   }
 
-  document.getElementById("inp-nombre").value = "";
+  document.getElementById("inp-nombre").value      = "";
+  document.getElementById("inp-obra").value         = "";
+  document.getElementById("inp-contratista").value  = "";
   setEstado(`"${nombre}" registrado correctamente.`, "ok");
   setTimeout(() => setEstado(""), 4000);
   cargarEmpleados();
@@ -215,6 +230,21 @@ function setBtnCapturar(enabled) {
   document.getElementById("btn-capturar").disabled = !enabled;
 }
 
+// ── Obras ─────────────────────────────────────────────────
+
+async function cargarObras() {
+  const { data } = await db.from("obras").select("nombre").order("nombre");
+  const sel = document.getElementById("inp-obra");
+  if (!data || !data.length) return;
+  data.forEach(o => {
+    const opt = document.createElement("option");
+    opt.value = o.nombre;
+    opt.textContent = o.nombre;
+    sel.appendChild(opt);
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────
 
+cargarObras();
 cargarEmpleados();
