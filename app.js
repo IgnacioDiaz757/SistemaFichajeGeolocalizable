@@ -95,7 +95,7 @@ function mostrarErrorScanner() {
   _scannerTimer = setTimeout(() => {
     result.style.display = "none";
     result.classList.remove("scanner-result-error");
-  }, 2500);
+  }, 5000);
 }
 
 function bloquearCampos() {
