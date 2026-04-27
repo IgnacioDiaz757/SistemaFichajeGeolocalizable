@@ -38,6 +38,24 @@
       <label>Foto</label>
       <div class="foto-area" id="foto-area" onclick="abrirCamara()">
         <img id="foto-preview" alt="Vista previa">
+
+        <!-- Animación de escaneo -->
+        <div id="scanner-overlay" style="display:none">
+          <div class="scanner-line"></div>
+          <div class="scanner-corner tl"></div>
+          <div class="scanner-corner tr"></div>
+          <div class="scanner-corner bl"></div>
+          <div class="scanner-corner br"></div>
+          <div class="scanner-texto">Identificando...</div>
+        </div>
+
+        <!-- Resultado del reconocimiento -->
+        <div id="scanner-result" style="display:none">
+          <div class="scanner-icono">✓</div>
+          <span class="scanner-label">Bienvenido</span>
+          <span id="scanner-nombre-result" class="scanner-nombre-result"></span>
+        </div>
+
         <div class="foto-placeholder" id="foto-placeholder">
           <span class="icono">📷</span>
           <span>Sacar foto para identificarte</span>

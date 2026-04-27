@@ -53,14 +53,43 @@ async function prepararReconocimiento() {
   } catch { /* silencioso — la app funciona igual sin reconocimiento */ }
 }
 
+// ── Scanner UI ────────────────────────────────────────────
+let _scannerTimer = null;
+
+function mostrarScanner() {
+  clearTimeout(_scannerTimer);
+  document.getElementById("scanner-overlay").style.display = "block";
+  document.getElementById("scanner-result").style.display  = "none";
+  // Seguridad: ocultar si el reconocimiento tarda más de 10s
+  _scannerTimer = setTimeout(ocultarScanner, 10000);
+}
+
+function ocultarScanner() {
+  clearTimeout(_scannerTimer);
+  document.getElementById("scanner-overlay").style.display = "none";
+  document.getElementById("scanner-result").style.display  = "none";
+}
+
+function mostrarResultadoScanner(nombre) {
+  clearTimeout(_scannerTimer);
+  document.getElementById("scanner-overlay").style.display = "none";
+  document.getElementById("scanner-nombre-result").textContent = nombre;
+  const result = document.getElementById("scanner-result");
+  result.style.display = "flex";
+  // Auto-ocultar a los 3 segundos
+  _scannerTimer = setTimeout(() => { result.style.display = "none"; }, 3000);
+}
+
 async function reconocerEnFoto(imgElement) {
-  if (!reconocReady || !faceMatcher) return;
+  if (!reconocReady || !faceMatcher) { ocultarScanner(); return; }
   try {
     const det = await faceapi
       .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
       .withFaceLandmarks(true)
       .withFaceDescriptor();
-    if (!det) return;
+
+    if (!det) { ocultarScanner(); return; }
+
     const match = faceMatcher.findBestMatch(det.descriptor);
     if (match.label !== "unknown") {
       document.getElementById("empleado").value = match.label;
@@ -72,10 +101,11 @@ async function reconocerEnFoto(imgElement) {
           if (sel.options[i].value === info.obra) { sel.selectedIndex = i; break; }
         }
       }
-      mostrarMensaje(`Bienvenido, ${match.label} ✓`, "ok");
-      setTimeout(() => mostrarMensaje("", ""), 3000);
+      mostrarResultadoScanner(match.label);
+    } else {
+      ocultarScanner();
     }
-  } catch { /* silencioso */ }
+  } catch { ocultarScanner(); }
 }
 
 // Aprende la cara del empleado desde la foto de asistencia (fire & forget)
@@ -263,8 +293,9 @@ function mostrarPreview(file) {
   document.getElementById("foto-placeholder").style.display = "none";
   document.getElementById("foto-cambiar").style.display     = "block";
 
-  // Al cargar la imagen, intentar reconocer en segundo plano
+  // Al cargar la imagen: mostrar scanner y luego reconocer
   preview.onload = () => {
+    if (reconocReady) mostrarScanner();
     reconocerEnFoto(preview);
     preview.onload = null;
   };
@@ -352,6 +383,7 @@ async function marcar(tipo) {
 
 function resetFoto() {
   fotoFile = null;
+  ocultarScanner();
   const preview = document.getElementById("foto-preview");
   if (preview.src.startsWith("blob:")) URL.revokeObjectURL(preview.src);
   preview.src           = "";
