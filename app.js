@@ -28,18 +28,35 @@ let modelsLoaded  = false;
 let empleadosInfo = new Map(); // nombre → { obra, contratista }
 
 async function prepararReconocimiento() {
-  if (typeof faceapi === "undefined") return;
+  if (typeof faceapi === "undefined") {
+    console.warn("Face-API no cargado");
+    return;
+  }
   try {
     if (!modelsLoaded) {
+      console.log("Cargando modelos de reconocimiento facial...");
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
         faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
         faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
       ]);
       modelsLoaded = true;
+      console.log("✓ Modelos cargados");
     }
-    const { data } = await db.from("empleados").select("nombre, descriptors, obra, contratista");
-    if (!data || !data.length) return;
+    
+    const { data, error } = await db.from("empleados").select("nombre, descriptors, obra, contratista");
+    
+    if (error) {
+      console.warn("Error cargando empleados:", error.message);
+      return;
+    }
+    
+    if (!data || !data.length) {
+      console.warn("No hay empleados registrados en el sistema");
+      return;
+    }
+    
+    console.log(`Preparando reconocimiento para ${data.length} empleados`);
     empleadosInfo.clear();
     const labeled = data.map(emp => {
       empleadosInfo.set(emp.nombre, { obra: emp.obra || "", contratista: emp.contratista || "" });
@@ -50,7 +67,10 @@ async function prepararReconocimiento() {
     });
     faceMatcher  = new faceapi.FaceMatcher(labeled, 0.5);
     reconocReady = true;
-  } catch { /* silencioso — la app funciona igual sin reconocimiento */ }
+    console.log("✓ Reconocimiento facial listo");
+  } catch (err) {
+    console.error("Error en prepararReconocimiento:", err);
+  }
 }
 
 // ── Scanner UI ────────────────────────────────────────────
@@ -109,14 +129,32 @@ function desbloquearCampos() {
 }
 
 async function reconocerEnFoto(imgElement) {
-  if (!reconocReady || !faceMatcher) { ocultarScanner(); return; }
+  // Esperar a que estén listos los modelos (máx 8s)
+  if (!modelsLoaded) {
+    let esperas = 0;
+    while (!modelsLoaded && esperas < 16) {
+      await new Promise(r => setTimeout(r, 500));
+      esperas++;
+    }
+  }
+
+  if (!reconocReady || !faceMatcher) {
+    console.warn("Reconocimiento no disponible");
+    mostrarErrorScanner();
+    return;
+  }
+
   try {
     const det = await faceapi
       .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
       .withFaceLandmarks(true)
       .withFaceDescriptor();
 
-    if (!det) { ocultarScanner(); return; }
+    if (!det) {
+      console.warn("No se detectó cara en la foto");
+      mostrarErrorScanner();
+      return;
+    }
 
     const match = faceMatcher.findBestMatch(det.descriptor);
     if (match.label !== "unknown") {
@@ -131,9 +169,13 @@ async function reconocerEnFoto(imgElement) {
       }
       mostrarResultadoScanner(match.label);
     } else {
+      console.warn("Cara no está registrada en el sistema");
       mostrarErrorScanner();
     }
-  } catch { mostrarErrorScanner(); }
+  } catch (err) {
+    console.error("Error en reconocimiento facial:", err);
+    mostrarErrorScanner();
+  }
 }
 
 // Aprende la cara del empleado desde la foto de asistencia (fire & forget)
@@ -182,6 +224,13 @@ async function guardarCaraParaReconocimiento(nombreEmpleado, file) {
 
 // Carga modelos en segundo plano al iniciar la página
 prepararReconocimiento();
+
+// Reintentar cada 5s si falló
+setInterval(() => {
+  if (!reconocReady) {
+    prepararReconocimiento();
+  }
+}, 5000);
 
 let lat         = null;
 let lng         = null;
@@ -323,10 +372,16 @@ function mostrarPreview(file) {
   document.getElementById("foto-placeholder").style.display = "none";
   document.getElementById("foto-cambiar").style.display     = "block";
 
-  // Al cargar la imagen: mostrar scanner y luego reconocer
+  // Al cargar la imagen: mostrar scanner siempre y luego reconocer
   preview.onload = () => {
-    if (reconocReady) mostrarScanner();
-    reconocerEnFoto(preview);
+    mostrarScanner(); // Mostrar escáner siempre, sin condición
+    if (reconocReady) {
+      reconocerEnFoto(preview);
+    } else {
+      // Si los modelos no están listos, mostrar error después de 3s
+      setTimeout(mostrarErrorScanner, 3000);
+      console.warn("Modelos de reconocimiento facial no listos");
+    }
     preview.onload = null;
   };
 }
