@@ -1,0 +1,10 @@
+# Variables de entorno (nunca subir al repositorio)
+.env
+.env.local
+.env.*.local
+
+# Carpeta generada por el build (contiene las credenciales reales)
+dist/
+
+# Dependencias
+node_modules/

@@ -1,10 +1,12 @@
-const SUPABASE_URL = "https://nybbcnuhdoldqqixgugv.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55YmJjbnVoZG9sZHFxaXhndWd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4MzIzNTQsImV4cCI6MjA5MjQwODM1NH0.G-vLF24JimiiJZ827S6v4JY3e274iFfXcrr7Pxqq9wk";
+const SUPABASE_URL = "%%SUPABASE_URL%%";
+const SUPABASE_KEY = "%%SUPABASE_KEY%%";
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let todos = [];
 let obras = [];
+let paginaActual = 1;
+const POR_PAGINA  = 50;
+let totalRegistros = 0;
 
 // ── Gestión de obras ──────────────────────────────────────
 
@@ -116,42 +118,71 @@ function badgeVerificacion(r) {
   return `<span class="v-fail">✗ Fuera de zona (${dist}m)</span>`;
 }
 
-// ── Datos ─────────────────────────────────────────────────
+// ── Filtros ───────────────────────────────────────────────
+
+function getFiltros() {
+  return {
+    nombre: document.getElementById("f-nombre").value.trim(),
+    desde:  document.getElementById("f-desde").value,
+    hasta:  document.getElementById("f-hasta").value,
+  };
+}
+
+function aplicarFiltrosQuery(query, { nombre, desde, hasta }) {
+  if (nombre) query = query.ilike("empleado", `%${nombre}%`);
+  if (desde)  query = query.gte("hora", desde + "T00:00:00");
+  if (hasta)  query = query.lte("hora", hasta + "T23:59:59");
+  return query;
+}
+
+// ── Datos con paginación en servidor ─────────────────────
 
 async function cargarDatos() {
   setEstado("Cargando...");
   await cargarObras();
 
-  const { data, error } = await db
-    .from("asistencias")
-    .select("*")
-    .order("hora", { ascending: false });
+  const filtros  = getFiltros();
+  const desdeIdx = (paginaActual - 1) * POR_PAGINA;
+  const hastaIdx = desdeIdx + POR_PAGINA - 1;
+
+  // Página actual
+  const qDatos = aplicarFiltrosQuery(
+    db.from("asistencias").select("*", { count: "exact" })
+      .order("hora", { ascending: false })
+      .range(desdeIdx, hastaIdx),
+    filtros
+  );
+
+  // Conteos para resumen (paralelo)
+  const qIngresos = aplicarFiltrosQuery(
+    db.from("asistencias").select("id", { count: "exact", head: true }).eq("tipo", "ingreso"),
+    filtros
+  );
+  const qSalidas = aplicarFiltrosQuery(
+    db.from("asistencias").select("id", { count: "exact", head: true }).eq("tipo", "salida"),
+    filtros
+  );
+
+  const [
+    { data, error, count },
+    { count: countI },
+    { count: countS },
+  ] = await Promise.all([qDatos, qIngresos, qSalidas]);
 
   if (error) { setEstado("Error al cargar los datos."); return; }
 
-  todos = data || [];
-  aplicarFiltros();
-}
+  totalRegistros = count || 0;
+  const datos    = data  || [];
 
-function getFiltrados() {
-  const nombre = document.getElementById("f-nombre").value.toLowerCase().trim();
-  const desde  = document.getElementById("f-desde").value;
-  const hasta  = document.getElementById("f-hasta").value;
-
-  return todos.filter(r => {
-    if (nombre && !r.empleado.toLowerCase().includes(nombre)) return false;
-    const t = new Date(r.hora);
-    if (desde && t < new Date(desde))               return false;
-    if (hasta && t > new Date(hasta + "T23:59:59")) return false;
-    return true;
-  });
+  renderResumen(totalRegistros, countI || 0, countS || 0);
+  renderTabla(datos);
+  renderListaPorObra(datos);
+  renderPaginacion();
 }
 
 function aplicarFiltros() {
-  const datos = getFiltrados();
-  renderResumen(datos);
-  renderTabla(datos);
-  renderListaPorObra(datos);
+  paginaActual = 1;
+  cargarDatos();
 }
 
 function limpiarFiltros() {
@@ -163,10 +194,34 @@ function limpiarFiltros() {
 
 // ── Render ────────────────────────────────────────────────
 
-function renderResumen(datos) {
-  document.getElementById("cnt-total").textContent    = datos.length;
-  document.getElementById("cnt-ingresos").textContent = datos.filter(r => r.tipo === "ingreso").length;
-  document.getElementById("cnt-salidas").textContent  = datos.filter(r => r.tipo === "salida").length;
+function renderResumen(total, ingresos, salidas) {
+  document.getElementById("cnt-total").textContent    = total;
+  document.getElementById("cnt-ingresos").textContent = ingresos;
+  document.getElementById("cnt-salidas").textContent  = salidas;
+}
+
+function renderPaginacion() {
+  const el          = document.getElementById("paginacion");
+  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA);
+
+  if (totalPaginas <= 1) { el.innerHTML = ""; return; }
+
+  const inicio = (paginaActual - 1) * POR_PAGINA + 1;
+  const fin    = Math.min(paginaActual * POR_PAGINA, totalRegistros);
+
+  el.innerHTML = `
+    <button class="btn btn-gris pag-btn" onclick="irPagina(${paginaActual - 1})" ${paginaActual === 1 ? "disabled" : ""}>← Anterior</button>
+    <span class="pag-info">Página <strong>${paginaActual}</strong> de <strong>${totalPaginas}</strong> &nbsp;·&nbsp; Mostrando ${inicio}–${fin} de ${totalRegistros}</span>
+    <button class="btn btn-gris pag-btn" onclick="irPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? "disabled" : ""}>Siguiente →</button>
+  `;
+}
+
+function irPagina(n) {
+  const totalPaginas = Math.ceil(totalRegistros / POR_PAGINA);
+  if (n < 1 || n > totalPaginas) return;
+  paginaActual = n;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  cargarDatos();
 }
 
 function renderTabla(datos) {
@@ -256,10 +311,18 @@ function verFoto(url) {
   document.getElementById("lightbox").style.display = "flex";
 }
 
-// ── Exportar CSV ──────────────────────────────────────────
+// ── Exportar CSV (sin paginación, trae todos los filtrados) ──
 
-function exportarCSV() {
-  const datos = getFiltrados();
+async function exportarCSV() {
+  const filtros = getFiltros();
+  const { data, error } = await aplicarFiltrosQuery(
+    db.from("asistencias").select("*").order("hora", { ascending: false }),
+    filtros
+  );
+
+  if (error) { alert("Error al exportar."); return; }
+
+  const datos = data || [];
   const cab   = "Empleado,Obra,Tipo,Fecha,Hora,Verificacion,Latitud,Longitud\n";
   const filas = datos.map(r => {
     const d     = new Date(r.hora);
@@ -292,15 +355,11 @@ async function eliminar(id) {
   const { error } = await db.from("asistencias").delete().eq("id", id);
   if (error) { alert("Error al eliminar."); return; }
 
-  todos = todos.filter(r => r.id !== id);
-  document.getElementById(`row-${id}`)?.remove();
-  document.getElementById(`fila-${id}`)?.remove();
+  // Si era el único en la página, retroceder una página
+  const totalPaginas = Math.ceil((totalRegistros - 1) / POR_PAGINA);
+  if (paginaActual > totalPaginas && paginaActual > 1) paginaActual--;
 
-  document.querySelectorAll(".empleado-bloque").forEach(bloque => {
-    if (!bloque.querySelectorAll(".registro-fila").length) bloque.remove();
-  });
-
-  renderResumen(getFiltrados());
+  cargarDatos();
 }
 
 function setEstado(msg) {
@@ -316,5 +375,12 @@ function cerrarSesion() {
 }
 
 // ── Init ──────────────────────────────────────────────────
+
+// Debounce en búsqueda por nombre (evita re-query por cada letra)
+let _debounce;
+document.getElementById("f-nombre").addEventListener("input", () => {
+  clearTimeout(_debounce);
+  _debounce = setTimeout(aplicarFiltros, 400);
+});
 
 cargarDatos();

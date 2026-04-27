@@ -259,6 +259,26 @@
 
     .btn-del:hover { background: #ffebee; border-color: #ef9a9a; color: #c62828; }
 
+    /* Paginación */
+    #paginacion {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 12px 0 20px;
+      flex-wrap: wrap;
+    }
+
+    .pag-info {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .pag-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     /* Print */
     @media print {
       /* Ocultar controles */
@@ -266,6 +286,7 @@
       .filtros,
       .obras-section,
       .tabla-wrap,
+      #paginacion,
       .btn-del,
       .btn-azul { display: none !important; }
 
@@ -363,7 +384,7 @@
     <div class="filtros">
       <div>
         <label>Empleado</label>
-        <input type="text" id="f-nombre" placeholder="Buscar por nombre" oninput="aplicarFiltros()">
+        <input type="text" id="f-nombre" placeholder="Buscar por nombre">
       </div>
       <div>
         <label>Desde</label>
@@ -396,6 +417,9 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Paginación -->
+    <div id="paginacion"></div>
 
     <!-- Lista por obra -->
     <div class="lista-titulo">Registros por obra</div>

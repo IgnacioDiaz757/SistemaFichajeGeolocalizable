@@ -1,10 +1,5 @@
-// ── Credenciales ──────────────────────────────────────────
-// Para cambiar la contraseña, modificá ADMIN_PASSWORD aquí
-// o configurá la variable de entorno ADMIN_PASSWORD en Vercel
-const ADMIN_USER     = "admin";
-const ADMIN_PASSWORD = typeof __ADMIN_PASSWORD__ !== "undefined"
-  ? __ADMIN_PASSWORD__
-  : "123456";
+const ADMIN_USER     = "%%ADMIN_USER%%";
+const ADMIN_PASSWORD = "%%ADMIN_PASSWORD%%";
 
 // ─────────────────────────────────────────────────────────
 
