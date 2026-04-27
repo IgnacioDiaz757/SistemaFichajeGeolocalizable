@@ -1,5 +1,5 @@
-const ADMIN_USER     = "%%ADMIN_USER%%";
-const ADMIN_PASSWORD = "%%ADMIN_PASSWORD%%";
+const ADMIN_USER     = window.APP_CONFIG.ADMIN_USER;
+const ADMIN_PASSWORD = window.APP_CONFIG.ADMIN_PASSWORD;
 
 // ─────────────────────────────────────────────────────────
 

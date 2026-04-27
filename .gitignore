@@ -1,4 +1,5 @@
-# Variables de entorno (nunca subir al repositorio)
+# Credenciales locales (nunca subir al repositorio)
+config.js
 .env
 .env.local
 .env.*.local

@@ -1,5 +1,5 @@
-const SUPABASE_URL = "%%SUPABASE_URL%%";
-const SUPABASE_KEY = "%%SUPABASE_KEY%%";
+const SUPABASE_URL = window.APP_CONFIG.SUPABASE_URL;
+const SUPABASE_KEY = window.APP_CONFIG.SUPABASE_KEY;
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 

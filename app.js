@@ -15,10 +15,56 @@ function actualizarIconTema() {
 
 actualizarIconTema();
 
-const SUPABASE_URL = "%%SUPABASE_URL%%";
-const SUPABASE_KEY = "%%SUPABASE_KEY%%";
+const SUPABASE_URL = window.APP_CONFIG.SUPABASE_URL;
+const SUPABASE_KEY = window.APP_CONFIG.SUPABASE_KEY;
 
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── Reconocimiento facial ─────────────────────────────────
+const MODEL_URL    = "https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights";
+let faceMatcher    = null;
+let reconocReady   = false;
+
+async function prepararReconocimiento() {
+  if (typeof faceapi === "undefined") return;
+  try {
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
+    ]);
+    const { data } = await db.from("empleados").select("nombre, descriptors");
+    if (!data || !data.length) return;
+    const labeled = data.map(emp =>
+      new faceapi.LabeledFaceDescriptors(
+        emp.nombre,
+        emp.descriptors.map(d => new Float32Array(d))
+      )
+    );
+    faceMatcher  = new faceapi.FaceMatcher(labeled, 0.5);
+    reconocReady = true;
+  } catch { /* silencioso — la app funciona igual sin reconocimiento */ }
+}
+
+async function reconocerEnFoto(imgElement) {
+  if (!reconocReady || !faceMatcher) return;
+  try {
+    const det = await faceapi
+      .detectSingleFace(imgElement, new faceapi.TinyFaceDetectorOptions({ inputSize: 320 }))
+      .withFaceLandmarks(true)
+      .withFaceDescriptor();
+    if (!det) return;
+    const match = faceMatcher.findBestMatch(det.descriptor);
+    if (match.label !== "unknown") {
+      document.getElementById("empleado").value = match.label;
+      mostrarMensaje(`Bienvenido, ${match.label} ✓`, "ok");
+      setTimeout(() => mostrarMensaje("", ""), 3000);
+    }
+  } catch { /* silencioso */ }
+}
+
+// Carga modelos en segundo plano al iniciar la página
+prepararReconocimiento();
 
 let lat         = null;
 let lng         = null;
@@ -157,6 +203,12 @@ function mostrarPreview(file) {
   preview.style.display = "block";
   document.getElementById("foto-placeholder").style.display = "none";
   document.getElementById("foto-cambiar").style.display     = "block";
+
+  // Al cargar la imagen, intentar reconocer en segundo plano
+  preview.onload = () => {
+    reconocerEnFoto(preview);
+    preview.onload = null;
+  };
 }
 
 function cerrarCamara() {
