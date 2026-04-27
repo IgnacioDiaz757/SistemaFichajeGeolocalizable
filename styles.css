@@ -256,6 +256,8 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
   color: #fff;
   text-align: center;
   padding: 0 12px;
+  white-space: pre-line;
+  line-height: 1.4;
 }
 
 .scanner-cambiar {
@@ -275,6 +277,7 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
 
 #scanner-result.scanner-result-error .scanner-nombre-result {
   color: #ff8a80;
+  font-size: 16px;
 }
 
 #scanner-result.scanner-result-error .scanner-label {

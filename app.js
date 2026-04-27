@@ -105,13 +105,14 @@ function mostrarResultadoScanner(nombre) {
 function mostrarErrorScanner() {
   clearTimeout(_scannerTimer);
   document.getElementById("scanner-overlay").style.display    = "none";
-  document.getElementById("scanner-nombre-result").textContent = "Cara no registrada";
+  document.getElementById("scanner-nombre-result").textContent = "Cara no registrada\nCompletá los campos de abajo";
   document.getElementById("scanner-icono").textContent         = "✕";
   document.querySelector(".scanner-label").textContent         = "No reconocido";
   const result = document.getElementById("scanner-result");
   result.classList.add("scanner-result-error");
   result.style.display = "flex";
-  // Se oculta solo después de 2.5s y los campos quedan editables
+  desbloquearCampos(); // Los campos quedan editables para completarlos manualmente
+  // Se oculta solo después de 5s
   _scannerTimer = setTimeout(() => {
     result.style.display = "none";
     result.classList.remove("scanner-result-error");
