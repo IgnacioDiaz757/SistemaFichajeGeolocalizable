@@ -92,6 +92,7 @@ function ocultarScanner() {
 
 function mostrarResultadoScanner(nombre) {
   clearTimeout(_scannerTimer);
+  reconocidoPorFacial = true; // Fue reconocido por facial
   document.getElementById("scanner-overlay").style.display    = "none";
   document.getElementById("scanner-nombre-result").textContent = nombre;
   document.getElementById("scanner-icono").textContent         = "✓";
@@ -104,6 +105,7 @@ function mostrarResultadoScanner(nombre) {
 
 function mostrarErrorScanner() {
   clearTimeout(_scannerTimer);
+  reconocidoPorFacial = false; // No fue reconocido
   document.getElementById("scanner-overlay").style.display    = "none";
   document.getElementById("scanner-nombre-result").textContent = "Cara no registrada\nCompletá los campos de abajo";
   document.getElementById("scanner-icono").textContent         = "✕";
@@ -238,6 +240,7 @@ let lng         = null;
 let fotoFile    = null;
 let stream      = null;
 let facingMode  = "environment"; // "environment" = trasera, "user" = frontal
+let reconocidoPorFacial = false; // Rastrear si fue reconocido por facial
 
 // ── Reloj ─────────────────────────────────────────────────
 setInterval(() => {
@@ -448,6 +451,7 @@ async function marcar(tipo) {
     lng:      lng !== null ? parseFloat(lng) : null,
     lugar,
     foto_url: fotoUrl,
+    reconocido_facial: reconocidoPorFacial,
   }]);
 
   btnIngreso.disabled = false;
@@ -469,6 +473,7 @@ async function marcar(tipo) {
 
 function resetFoto() {
   fotoFile = null;
+  reconocidoPorFacial = false;
   ocultarScanner();
   const preview = document.getElementById("foto-preview");
   if (preview.src.startsWith("blob:")) URL.revokeObjectURL(preview.src);

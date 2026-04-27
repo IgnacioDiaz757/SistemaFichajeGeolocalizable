@@ -229,7 +229,7 @@ function renderTabla(datos) {
   tbody.innerHTML = "";
 
   if (!datos.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#999">Sin registros</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;color:#999">Sin registros</td></tr>';
     return;
   }
 
@@ -238,6 +238,9 @@ function renderTabla(datos) {
     const icono   = r.tipo === "ingreso" ? "▲" : "▼";
     const label   = r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1);
     const mapsUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
+    const reconocimiento = r.reconocido_facial 
+      ? '<span title="Reconocido por facial" style="color:#2e7d32;font-weight:bold">👤 Facial</span>'
+      : '<span title="Datos completados manualmente" style="color:#ff6f00;font-weight:bold">🖋️ Manual</span>';
 
     const tr = document.createElement("tr");
     tr.id = `row-${r.id}`;
@@ -247,6 +250,7 @@ function renderTabla(datos) {
       <td class="nowrap">${d.toLocaleDateString("es-AR")}</td>
       <td class="nowrap">${d.toLocaleTimeString("es-AR", { hour12: false })}</td>
       <td>${r.lugar || "—"}</td>
+      <td>${reconocimiento}</td>
       <td>${badgeVerificacion(r)}</td>
       <td class="nowrap"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></td>
       <td><button class="btn-del" onclick="eliminar(${r.id})">✕</button></td>
@@ -280,6 +284,9 @@ function renderListaPorObra(datos) {
       const fotoHtml = r.foto_url
         ? `<img class="foto-thumb" src="${r.foto_url}" onclick="verFoto('${r.foto_url}')" alt="foto">`
         : `<div class="foto-none">📷</div>`;
+      const reconocimiento = r.reconocido_facial 
+        ? '<span title="Reconocido por facial" style="color:#2e7d32;font-weight:bold">👤</span>'
+        : '<span title="Datos completados manualmente" style="color:#ff6f00;font-weight:bold">🖋️</span>';
 
       return `
         <div class="registro-fila" id="fila-${r.id}">
@@ -288,6 +295,7 @@ function renderListaPorObra(datos) {
           <span class="tipo-${r.tipo}">${icono} ${label}</span>
           <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR", { hour12: false })}</span>
           <span class="dir"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></span>
+          ${reconocimiento}
           ${badgeVerificacion(r)}
           <button class="btn-del" onclick="eliminar(${r.id})">✕</button>
         </div>`;
@@ -384,3 +392,6 @@ document.getElementById("f-nombre").addEventListener("input", () => {
 });
 
 cargarDatos();
+
+// ── Refresco automático ──────────────────────────────────
+setInterval(cargarDatos, 5000); // Refrescar cada 5 segundos
