@@ -27,7 +27,7 @@ async function cargarModelos() {
 async function cargarEmpleados() {
   const { data, error } = await db
     .from("empleados")
-    .select("id, nombre, obra, contratista, created_at")
+    .select("id, nombre, puesto, obra, contratista, created_at")
     .order("nombre");
 
   const lista = document.getElementById("lista-asociados");
@@ -42,7 +42,7 @@ async function cargarEmpleados() {
   }
 
   lista.innerHTML = data.map(e => {
-    const sub = [e.obra, e.contratista].filter(Boolean).join(" · ");
+    const sub = [e.puesto, e.obra, e.contratista].filter(Boolean).join(" · ");
     return `
     <div class="empleado-item">
       <div>
@@ -187,11 +187,12 @@ function actualizarProgreso() {
 
 async function guardarEmpleado() {
   const nombre      = document.getElementById("inp-nombre").value.trim();
+  const puesto      = document.getElementById("inp-puesto").value.trim() || null;
   const obra        = document.getElementById("inp-obra").value || null;
   const contratista = document.getElementById("inp-contratista").value.trim() || null;
 
   const { error } = await db.from("empleados").upsert(
-    [{ nombre, descriptors: descriptoresCapturados, obra, contratista }],
+    [{ nombre, descriptors: descriptoresCapturados, puesto, obra, contratista }],
     { onConflict: "nombre" }
   );
 
@@ -207,6 +208,7 @@ async function guardarEmpleado() {
   }
 
   document.getElementById("inp-nombre").value      = "";
+  document.getElementById("inp-puesto").value       = "";
   document.getElementById("inp-obra").value         = "";
   document.getElementById("inp-contratista").value  = "";
   setEstado(`"${nombre}" registrado correctamente.`, "ok");

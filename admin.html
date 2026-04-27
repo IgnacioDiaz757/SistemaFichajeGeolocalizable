@@ -377,6 +377,7 @@
       <button class="btn btn-azul"  onclick="exportarCSV()">Exportar CSV</button>
       <button class="btn btn-verde" onclick="window.print()">Imprimir</button>
       <button class="btn btn-azul"    onclick="window.location.href='registro-caras.html'">👤 Registrar caras</button>
+      <button class="btn btn-verde"  onclick="abrirModalPlanilla()">📋 Planilla</button>
       <button class="btn btn-naranja" onclick="cerrarSesion()">Salir</button>
     </div>
   </header>
@@ -488,6 +489,45 @@
     <img id="lightbox-img" alt="Foto">
   </div>
 
+  <!-- Modal Planilla -->
+  <div id="modal-planilla" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;align-items:center;justify-content:center">
+    <div style="background:var(--surface);border-radius:12px;padding:28px 24px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,0.25)">
+      <h2 style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:20px">📋 Generar Planilla de Horario</h2>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text-label);margin-bottom:5px">Asociado</label>
+        <select id="pl-empleado" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;background:var(--input-bg);color:var(--text)">
+          <option value="">Cargando...</option>
+        </select>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:20px">
+        <div style="flex:1">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text-label);margin-bottom:5px">Mes</label>
+          <select id="pl-mes" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;background:var(--input-bg);color:var(--text)">
+            <option value="1">Enero</option><option value="2">Febrero</option>
+            <option value="3">Marzo</option><option value="4">Abril</option>
+            <option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option>
+            <option value="9">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--text-label);margin-bottom:5px">Año</label>
+          <select id="pl-anio" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:14px;background:var(--input-bg);color:var(--text)"></select>
+        </div>
+      </div>
+
+      <p id="pl-estado" style="font-size:13px;color:var(--text-muted);min-height:18px;margin-bottom:16px;text-align:center"></p>
+
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-gris" style="flex:1" onclick="cerrarModalPlanilla()">Cancelar</button>
+        <button class="btn btn-verde" style="flex:2" onclick="generarPlanilla()">⬇ Descargar Excel</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     if (sessionStorage.getItem("admin_auth") !== "ok") window.location.replace("login.html");
 
@@ -508,6 +548,7 @@
   </script>
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js"></script>
   <script src="admin.js"></script>
 
 </body>
