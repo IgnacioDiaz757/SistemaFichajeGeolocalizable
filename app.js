@@ -60,7 +60,6 @@ function mostrarScanner() {
   clearTimeout(_scannerTimer);
   document.getElementById("scanner-overlay").style.display = "block";
   document.getElementById("scanner-result").style.display  = "none";
-  // Seguridad: ocultar si el reconocimiento tarda más de 10s
   _scannerTimer = setTimeout(ocultarScanner, 10000);
 }
 
@@ -68,16 +67,25 @@ function ocultarScanner() {
   clearTimeout(_scannerTimer);
   document.getElementById("scanner-overlay").style.display = "none";
   document.getElementById("scanner-result").style.display  = "none";
+  desbloquearCampos();
 }
 
 function mostrarResultadoScanner(nombre) {
   clearTimeout(_scannerTimer);
-  document.getElementById("scanner-overlay").style.display = "none";
+  document.getElementById("scanner-overlay").style.display    = "none";
   document.getElementById("scanner-nombre-result").textContent = nombre;
-  const result = document.getElementById("scanner-result");
-  result.style.display = "flex";
-  // Auto-ocultar a los 3 segundos
-  _scannerTimer = setTimeout(() => { result.style.display = "none"; }, 3000);
+  document.getElementById("scanner-result").style.display     = "flex";
+  bloquearCampos(); // nombre y obra quedan fijos
+}
+
+function bloquearCampos() {
+  document.getElementById("empleado").disabled = true;
+  document.getElementById("lugar").disabled    = true;
+}
+
+function desbloquearCampos() {
+  document.getElementById("empleado").disabled = false;
+  document.getElementById("lugar").disabled    = false;
 }
 
 async function reconocerEnFoto(imgElement) {
@@ -229,6 +237,8 @@ async function iniciarStream() {
 }
 
 async function abrirCamara() {
+  ocultarScanner();      // limpia resultado anterior
+  desbloquearCampos();   // desbloquea si venía de un reconocimiento
   const seguro = location.protocol === "https:" ||
                  location.hostname  === "localhost" ||
                  location.hostname  === "127.0.0.1";

@@ -258,6 +258,25 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
   padding: 0 12px;
 }
 
+.scanner-cambiar {
+  position: absolute;
+  bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.35);
+}
+
+/* Campos bloqueados tras reconocimiento exitoso */
+#empleado:disabled,
+#lugar:disabled {
+  opacity: 1;
+  cursor: default;
+  border-color: #00e676 !important;
+  color: var(--text);
+  background: var(--input-bg);
+}
+
 .foto-placeholder {
   display: flex;
   flex-direction: column;
