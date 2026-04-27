@@ -267,6 +267,20 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
   color: rgba(255,255,255,0.35);
 }
 
+/* Estado error (cara no registrada) */
+#scanner-result.scanner-result-error .scanner-icono {
+  background: #e53935;
+  color: #fff;
+}
+
+#scanner-result.scanner-result-error .scanner-nombre-result {
+  color: #ff8a80;
+}
+
+#scanner-result.scanner-result-error .scanner-label {
+  color: rgba(255,255,255,0.5);
+}
+
 /* Campos bloqueados tras reconocimiento exitoso */
 #empleado:disabled,
 #lugar:disabled {

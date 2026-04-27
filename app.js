@@ -74,8 +74,28 @@ function mostrarResultadoScanner(nombre) {
   clearTimeout(_scannerTimer);
   document.getElementById("scanner-overlay").style.display    = "none";
   document.getElementById("scanner-nombre-result").textContent = nombre;
-  document.getElementById("scanner-result").style.display     = "flex";
+  document.getElementById("scanner-icono").textContent         = "✓";
+  document.querySelector(".scanner-label").textContent         = "Bienvenido";
+  const result = document.getElementById("scanner-result");
+  result.classList.remove("scanner-result-error");
+  result.style.display = "flex";
   bloquearCampos(); // nombre y obra quedan fijos
+}
+
+function mostrarErrorScanner() {
+  clearTimeout(_scannerTimer);
+  document.getElementById("scanner-overlay").style.display    = "none";
+  document.getElementById("scanner-nombre-result").textContent = "Cara no registrada";
+  document.getElementById("scanner-icono").textContent         = "✕";
+  document.querySelector(".scanner-label").textContent         = "No reconocido";
+  const result = document.getElementById("scanner-result");
+  result.classList.add("scanner-result-error");
+  result.style.display = "flex";
+  // Se oculta solo después de 2.5s y los campos quedan editables
+  _scannerTimer = setTimeout(() => {
+    result.style.display = "none";
+    result.classList.remove("scanner-result-error");
+  }, 2500);
 }
 
 function bloquearCampos() {
@@ -111,9 +131,9 @@ async function reconocerEnFoto(imgElement) {
       }
       mostrarResultadoScanner(match.label);
     } else {
-      ocultarScanner();
+      mostrarErrorScanner();
     }
-  } catch { ocultarScanner(); }
+  } catch { mostrarErrorScanner(); }
 }
 
 // Aprende la cara del empleado desde la foto de asistencia (fire & forget)
