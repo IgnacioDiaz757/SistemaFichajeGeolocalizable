@@ -458,7 +458,8 @@ async function marcar(tipo) {
   btnSalida.disabled  = false;
 
   if (error) {
-    mostrarMensaje("Error al guardar ✗", "error");
+    console.error("Error al guardar asistencia:", error);
+    mostrarMensaje("Error al guardar ✗ — " + (error.message || error.code || "ver consola"), "error");
   } else {
     const hora = new Date().toLocaleTimeString("es-AR", { hour12: false });
     mostrarMensaje(
