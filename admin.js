@@ -4,6 +4,7 @@ const SUPABASE_KEY = window.APP_CONFIG.SUPABASE_KEY;
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let obras = [];
+let contratistas = [];
 let paginaActual = 1;
 const POR_PAGINA  = 50;
 let totalRegistros = 0;
@@ -94,6 +95,52 @@ function usarMiUbicacion() {
   );
 }
 
+// ── Gestión de contratistas ───────────────────────────────
+
+async function cargarContratistas() {
+  const { data, error } = await db.from("contratistas").select("*").order("nombre");
+  if (!error) contratistas = data || [];
+  renderGestionContratistas();
+}
+
+function renderGestionContratistas() {
+  const contenedor = document.getElementById("contratistas-lista");
+  if (!contratistas.length) {
+    contenedor.innerHTML = '<p style="color:#999;font-size:13px;padding:12px 16px">Sin contratistas configurados. Agregá uno con el botón.</p>';
+    return;
+  }
+  contenedor.innerHTML = contratistas.map(c => `
+    <div class="obra-item">
+      <span class="obra-nombre">🏢 ${c.nombre}</span>
+      <button class="btn-del" onclick="eliminarContratista('${c.id}', '${c.nombre.replace(/'/g, "\\'")}')">✕</button>
+    </div>`).join("");
+}
+
+function toggleNuevoContratista() {
+  const form = document.getElementById("nuevo-contratista-form");
+  form.style.display = form.style.display === "none" ? "flex" : "none";
+}
+
+async function agregarContratista() {
+  const nombre = document.getElementById("ct-nombre").value.trim();
+  if (!nombre) { alert("Ingresá el nombre del contratista."); return; }
+  const { data, error } = await db.from("contratistas").insert([{ nombre }]).select();
+  if (error) { alert("Error al guardar: " + error.message); return; }
+  contratistas.push(data[0]);
+  contratistas.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  renderGestionContratistas();
+  document.getElementById("ct-nombre").value = "";
+  document.getElementById("nuevo-contratista-form").style.display = "none";
+}
+
+async function eliminarContratista(id, nombre) {
+  if (!confirm(`¿Eliminar el contratista "${nombre}"?`)) return;
+  const { error } = await db.from("contratistas").delete().eq("id", id);
+  if (error) { alert("Error al eliminar."); return; }
+  contratistas = contratistas.filter(c => c.id !== id);
+  renderGestionContratistas();
+}
+
 // ── Verificación GPS ──────────────────────────────────────
 
 function distanciaMetros(lat1, lng1, lat2, lng2) {
@@ -139,7 +186,7 @@ function aplicarFiltrosQuery(query, { nombre, desde, hasta }) {
 
 async function cargarDatos() {
   setEstado("Cargando...");
-  await cargarObras();
+  await Promise.all([cargarObras(), cargarContratistas()]);
 
   const filtros  = getFiltros();
   const desdeIdx = (paginaActual - 1) * POR_PAGINA;
@@ -403,11 +450,33 @@ function cerrarModalPlanilla() {
   document.getElementById("modal-planilla").style.display = "none";
 }
 
+let _empleadosPlanilla = [];
+
 async function cargarEmpleadosPlanilla() {
   const { data } = await db.from("empleados").select("nombre, puesto, contratista").order("nombre");
+  _empleadosPlanilla = data || [];
+
+  // Llenar selector de contratistas con valores únicos
+  const selC = document.getElementById("pl-contratista");
+  selC.innerHTML = '<option value="">— Todos los contratistas —</option>';
+  const contratistas = [...new Set(_empleadosPlanilla.map(e => e.contratista).filter(Boolean))].sort();
+  contratistas.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c; opt.textContent = c;
+    selC.appendChild(opt);
+  });
+
+  filtrarEmpleadosPlanilla();
+}
+
+function filtrarEmpleadosPlanilla() {
+  const contratista = document.getElementById("pl-contratista").value;
   const sel = document.getElementById("pl-empleado");
   sel.innerHTML = '<option value="">— Seleccioná un asociado —</option>';
-  (data || []).forEach(e => {
+  const lista = contratista
+    ? _empleadosPlanilla.filter(e => e.contratista === contratista)
+    : _empleadosPlanilla;
+  lista.forEach(e => {
     const opt = document.createElement("option");
     opt.value       = e.nombre;
     opt.textContent = e.nombre;
@@ -435,6 +504,7 @@ const MAPEO_PLANILLA = {
 const MESES_ES_PL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
                      "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
 const DIAS_ES_PL  = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const INICIALES_DIA = ["D","L","M","M","J","V","S"]; // D=Dom L=Lun M=Mar/Mié J=Jue V=Vie S=Sáb
 
 async function generarPlanilla() {
   const sel       = document.getElementById("pl-empleado");
@@ -495,9 +565,9 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   const M = MAPEO_PLANILLA;
   const cambios = {};
 
-  cambios[M.puesto]      = puesto;
-  cambios[M.nombre]      = nombre;
-  cambios[M.contratista] = contratista;
+  cambios[M.puesto]      = `PUESTO: ${puesto.toUpperCase()}`;
+  cambios[M.nombre]      = `NOMBRE Y APELLIDO: ${nombre.toUpperCase()}`;
+  cambios[M.contratista] = contratista.toUpperCase();
   cambios[M.mesAnio]     = `${MESES_ES_PL[mes - 1]}-${String(anio).slice(2)}`;
 
   // Agrupar registros por fecha
@@ -510,13 +580,13 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   });
 
   // Recorrer TODOS los días del mes en orden, con o sin registros
-  const diasDelMes = new Date(anio, mes, 0).getDate(); // 28/29/30/31
+  const diasDelMes = new Date(anio, mes, 0).getDate(); // 28/29/30/31 según el mes y año
   let fila = M.dataStartRow;
 
   for (let d = 1; d <= diasDelMes && fila <= M.dataEndRow; d++) {
     const fechaKey  = `${anio}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const diaSemana = DIAS_ES_PL[new Date(anio, mes - 1, d).getDay()];
-    const diaLabel  = `${diaSemana} ${String(d).padStart(2,"0")}/${String(mes).padStart(2,"0")}`;
+    const inicial  = INICIALES_DIA[new Date(anio, mes - 1, d).getDay()];
+    const diaLabel = `${inicial} ${d}`;
     const { ingresos = [], salidas = [] } = byDate[fechaKey] || {};
     const maxF = Math.max(ingresos.length, salidas.length, 1);
 
@@ -524,12 +594,22 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
       const ing = ingresos[i];
       const sal = salidas[i];
       cambios[`${M.colDia}${fila}`]       = i === 0 ? diaLabel : "";
-      cambios[`${M.colEntrada}${fila}`]   = ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "";
-      cambios[`${M.colSalida}${fila}`]    = sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "";
-      cambios[`${M.colUbicacion}${fila}`] = ing?.lugar || sal?.lugar || "";
+      cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
+      cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
+      cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
       cambios[`${M.colEncargado}${fila}`] = "";
       fila++;
     }
+  }
+
+  // Limpiar filas sobrantes: borra el placeholder de días que no existen en el mes
+  // Ej: abril tiene 30 días → borra la fila del día 31
+  for (let r = fila; r <= M.dataEndRow; r++) {
+    cambios[`${M.colDia}${r}`]       = "";
+    cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
+    cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
+    cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
+    cambios[`${M.colEncargado}${r}`] = "";
   }
 
   return cambios;
@@ -547,10 +627,11 @@ async function aplicarCambiosAPlantilla(ab, cambios) {
   });
 }
 
-// Modifica celdas directamente en el XML preservando todos los estilos originales
+// Modifica celdas en el XML preservando estilos originales.
+// cambios[addr] = string (texto plano) o { v, bold, size } (rich text con formato)
 function modificarCeldasXml(xml, cambios) {
-  const NS  = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const NS   = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const doc  = new DOMParser().parseFromString(xml, "application/xml");
   const cells = doc.getElementsByTagNameNS(NS, "c");
 
   for (let i = 0; i < cells.length; i++) {
@@ -558,17 +639,36 @@ function modificarCeldasXml(xml, cambios) {
     const ref  = cell.getAttribute("r");
     if (!ref || !(ref in cambios)) continue;
 
-    const valor = String(cambios[ref] ?? "");
+    const entrada  = cambios[ref];
+    const esObj    = entrada !== null && typeof entrada === "object";
+    const valor    = esObj ? String(entrada.v ?? "") : String(entrada ?? "");
 
-    // Vaciar contenido actual (mantiene atributos como s= de estilo intactos)
     while (cell.firstChild) cell.removeChild(cell.firstChild);
-
-    // Escribir como inline string — preserva el atributo s= (estilo/borde/color)
     cell.setAttribute("t", "inlineStr");
+
     const is = doc.createElementNS(NS, "is");
-    const t  = doc.createElementNS(NS, "t");
-    t.textContent = valor;
-    is.appendChild(t);
+
+    if (esObj && (entrada.bold || entrada.size)) {
+      // Rich text: <r><rPr><b/><sz val="14"/></rPr><t>valor</t></r>
+      const r   = doc.createElementNS(NS, "r");
+      const rPr = doc.createElementNS(NS, "rPr");
+      if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
+      if (entrada.size) {
+        const sz = doc.createElementNS(NS, "sz");
+        sz.setAttribute("val", String(entrada.size));
+        rPr.appendChild(sz);
+      }
+      r.appendChild(rPr);
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      r.appendChild(t);
+      is.appendChild(r);
+    } else {
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    }
+
     cell.appendChild(is);
   }
 

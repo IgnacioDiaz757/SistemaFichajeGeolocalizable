@@ -246,7 +246,22 @@ async function cargarObras() {
   });
 }
 
+// ── Contratistas ──────────────────────────────────────────
+
+async function cargarContratistas() {
+  const { data } = await db.from("contratistas").select("nombre").order("nombre");
+  const sel = document.getElementById("inp-contratista");
+  if (!data || !data.length) return;
+  data.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c.nombre;
+    opt.textContent = c.nombre;
+    sel.appendChild(opt);
+  });
+}
+
 // ── Init ──────────────────────────────────────────────────
 
 cargarObras();
+cargarContratistas();
 cargarEmpleados();
