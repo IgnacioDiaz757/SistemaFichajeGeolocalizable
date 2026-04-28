@@ -520,3 +520,100 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
   .hora-valor { font-size: 19px; }
   button { font-size: 14px; padding: 15px 8px; }
 }
+
+/* ── Modal permiso GPS ───────────────────────────────────── */
+.gps-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(6px);
+  padding: 20px;
+}
+.gps-overlay.visible { display: flex; }
+
+.gps-card {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: gps-in 0.25s ease;
+}
+
+@keyframes gps-in {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+.gps-icono {
+  font-size: 52px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.gps-titulo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.gps-texto {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.gps-btn-permitir {
+  width: 100%;
+  padding: 14px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.1s;
+  margin-bottom: 10px;
+}
+.gps-btn-permitir:hover  { filter: brightness(1.1); }
+.gps-btn-permitir:active { transform: scale(0.97); }
+.gps-btn-permitir:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.gps-estado {
+  font-size: 13px;
+  min-height: 18px;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.gps-estado.error { color: #c62828; }
+.gps-estado.ok    { color: #2e7d32; }
+
+.gps-btn-omitir {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 6px;
+}
+.gps-btn-omitir:hover { color: var(--text); }
+
+.gps-pasos {
+  text-align: left;
+  padding-left: 20px;
+  margin-bottom: 22px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.9;
+}
+.gps-pasos strong { color: var(--text); }

@@ -156,7 +156,7 @@ function distanciaMetros(lat1, lng1, lat2, lng2) {
 function badgeVerificacion(r) {
   const obra = obras.find(o => o.nombre === r.lugar);
   if (!obra || obra.lat == null || r.lat == null || r.lng == null) {
-    return '<span class="v-none">Sin zona</span>';
+    return `<span class="v-none">${r.lugar || 'Sin zona'}</span>`;
   }
   const dist = Math.round(distanciaMetros(obra.lat, obra.lng, r.lat, r.lng));
   if (dist <= obra.radio) {

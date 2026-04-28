@@ -251,17 +251,100 @@ document.getElementById("hora").textContent =
   new Date().toLocaleTimeString("es-AR", { hour12: false });
 
 // ── GPS ───────────────────────────────────────────────────
-navigator.geolocation.getCurrentPosition(
-  (pos) => {
-    lat = pos.coords.latitude.toFixed(6);
-    lng = pos.coords.longitude.toFixed(6);
-    document.getElementById("ubicacion").textContent = `${lat}, ${lng}`;
-  },
-  () => {
-    document.getElementById("ubicacion").textContent = "sin GPS";
-  },
-  { timeout: 10000 }
-);
+async function iniciarPermisosGPS() {
+  // Si el navegador soporta la API de permisos, consultamos antes de pedir
+  if (navigator.permissions) {
+    try {
+      const result = await navigator.permissions.query({ name: "geolocation" });
+      if (result.state === "granted") {
+        // Ya tenía permiso: obtener silenciosamente sin mostrar modal
+        obtenerUbicacionSilenciosa();
+        return;
+      }
+      if (result.state === "denied") {
+        // Permiso denegado de antes: mostrar modal informando
+        mostrarModalGPS("denegado");
+        return;
+      }
+    } catch { /* algunos browsers no soportan permissions API */ }
+  }
+  // Estado "prompt" o no hay API de permisos: mostrar modal
+  mostrarModalGPS();
+}
+
+function mostrarModalGPS(estado) {
+  const modal = document.getElementById("modal-gps");
+  if (!modal) return;
+  modal.classList.add("visible");
+
+  if (estado === "denegado") {
+    document.getElementById("gps-vista-pedir").style.display    = "none";
+    document.getElementById("gps-vista-denegado").style.display = "block";
+  }
+}
+
+function cerrarModalGPS() {
+  const modal = document.getElementById("modal-gps");
+  if (modal) modal.classList.remove("visible");
+}
+
+function obtenerUbicacionSilenciosa() {
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      lat = pos.coords.latitude.toFixed(6);
+      lng = pos.coords.longitude.toFixed(6);
+      document.getElementById("ubicacion").textContent = `${lat}, ${lng}`;
+    },
+    () => {
+      document.getElementById("ubicacion").textContent = "sin GPS";
+    },
+    { timeout: 10000 }
+  );
+}
+
+function solicitarUbicacion() {
+  const btnEl    = document.getElementById("btn-permitir-gps");
+  const estadoEl = document.getElementById("gps-estado");
+
+  btnEl.disabled       = true;
+  btnEl.textContent    = "Obteniendo ubicación…";
+  estadoEl.textContent = "";
+  estadoEl.className   = "gps-estado";
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      lat = pos.coords.latitude.toFixed(6);
+      lng = pos.coords.longitude.toFixed(6);
+      document.getElementById("ubicacion").textContent = `${lat}, ${lng}`;
+      estadoEl.textContent = "✓ Ubicación obtenida";
+      estadoEl.className   = "gps-estado ok";
+      setTimeout(cerrarModalGPS, 800);
+    },
+    (err) => {
+      btnEl.disabled    = false;
+      btnEl.textContent = "📍 Intentar de nuevo";
+      if (err.code === 1) {
+        // Permiso denegado: cambiar a vista con instrucciones
+        document.getElementById("gps-vista-pedir").style.display    = "none";
+        document.getElementById("gps-vista-denegado").style.display = "block";
+      } else {
+        btnEl.disabled    = false;
+        btnEl.textContent = "📍 Intentar de nuevo";
+        estadoEl.textContent = "No se pudo obtener la ubicación. Intentá de nuevo.";
+        estadoEl.className   = "gps-estado error";
+      }
+    },
+    { timeout: 12000, enableHighAccuracy: true }
+  );
+}
+
+function omitirGPS() {
+  document.getElementById("ubicacion").textContent = "sin GPS";
+  cerrarModalGPS();
+}
+
+// Iniciar al cargar la página
+iniciarPermisosGPS();
 
 function esperarGPS() {
   return new Promise((resolve) => {

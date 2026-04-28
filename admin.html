@@ -801,17 +801,18 @@
 
     <div class="header-actions">
       <button class="btn btn-gris btn-icon" id="btn-tema-admin" onclick="toggleTemaAdmin()" title="Cambiar tema"></button>
-      <button class="btn btn-gris hide-mobile" onclick="cargarDatos()" title="Actualizar datos">↻ Actualizar</button>
+      <button class="btn btn-gris hide-mobile" onclick="cargarDatos()" title="Actualizar datos">Actualizar</button>
 
       <div class="header-sep"></div>
 
-      <button class="btn btn-gris hide-mobile" onclick="exportarCSV()">↓ CSV</button>
-      <button class="btn btn-gris hide-mobile" onclick="window.print()">⎙ Imprimir</button>
+      <button class="btn btn-gris hide-mobile" onclick="exportarCSV()">CSV</button>
+      <button class="btn btn-gris hide-mobile" onclick="window.print()">Imprimir</button>
 
       <div class="header-sep"></div>
 
-      <button class="btn btn-azul" onclick="window.location.href='registro-caras.html'">👤 Registro</button>
-      <button class="btn btn-verde" onclick="abrirModalPlanilla()">📋 Generar planilla</button>
+      <button class="btn btn-azul" onclick="window.location.href='historial-planillas.html'">Historial de Planillas</button>
+      <button class="btn btn-azul" onclick="window.location.href='registro-caras.html'">Registro</button>
+      <button class="btn btn-verde" onclick="abrirModalPlanilla()">Generar planilla</button>
 
       <div class="header-sep"></div>
 
@@ -856,7 +857,7 @@
       <!-- Obras -->
       <div class="config-section">
         <div class="config-header obras-hdr">
-          <span>📍 Obras</span>
+          <span>Obra</span>
           <button class="btn btn-gris" onclick="toggleNuevaObra()">+ Nueva obra</button>
         </div>
         <div id="nueva-obra-form" style="display:none" class="nueva-obra-form">
@@ -887,12 +888,12 @@
       <!-- Contratistas -->
       <div class="config-section">
         <div class="config-header contratistas-hdr">
-          <span>🏢 Contratistas</span>
+          <span>Empresa</span>
           <button class="btn btn-gris" onclick="toggleNuevoContratista()">+ Nuevo</button>
         </div>
         <div id="nuevo-contratista-form" style="display:none" class="nueva-obra-form">
           <div>
-            <label>Nombre del contratista</label>
+            <label>Nombre de la empresa</label>
             <input type="text" id="ct-nombre" placeholder="Ej: Empresa SA" style="width:220px">
           </div>
           <button class="btn btn-verde" onclick="agregarContratista()">Guardar</button>
