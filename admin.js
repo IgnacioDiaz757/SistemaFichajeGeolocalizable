@@ -545,15 +545,26 @@ async function generarPlanilla() {
     const cambios = construirCambios(nombreEmp, puesto, contratista, data, mes, anio);
     const blob    = await aplicarCambiosAPlantilla(ab, cambios);
 
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `Planilla_${nombreEmp.replace(/\s+/g,"_")}_${MESES_ES_PL[mes-1]}_${anio}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    // Guardar en Supabase Storage (bucket "planillas")
+    const nombreArchivo = `Planilla_${nombreEmp.replace(/\s+/g,"_")}_${MESES_ES_PL[mes-1]}_${anio}.xlsx`;
+    const archivo = new File([blob], nombreArchivo, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    
+    estado.textContent = "Guardando en historial...";
+    const { error: uploadError } = await db.storage
+      .from("planillas")
+      .upload(`${new Date().getTime()}_${nombreArchivo}`, archivo);
+    
+    if (uploadError) throw new Error("Error al guardar: " + uploadError.message);
 
-    estado.textContent = "¡Planilla descargada!";
+    // Registrar en localStorage que se generó una planilla para este empleado y mes
+    const planillasGeneradas = JSON.parse(localStorage.getItem("planillas_generadas") || "[]");
+    const mesKey = `${anio}-${String(mes).padStart(2, "0")}`;
+    if (!planillasGeneradas.some(p => p.empleado === nombreEmp && p.mes === mesKey)) {
+      planillasGeneradas.push({ empleado: nombreEmp, mes: mesKey, fecha: new Date().toISOString() });
+      localStorage.setItem("planillas_generadas", JSON.stringify(planillasGeneradas));
+    }
+
+    estado.textContent = "✓ Planilla guardada en historial";
     setTimeout(() => { estado.textContent = ""; }, 3000);
   } catch (e) {
     estado.textContent = "Error: " + e.message;
@@ -569,6 +580,11 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[M.nombre]      = `NOMBRE Y APELLIDO: ${nombre.toUpperCase()}`;
   cambios[M.contratista] = contratista.toUpperCase();
   cambios[M.mesAnio]     = `${MESES_ES_PL[mes - 1]}-${String(anio).slice(2)}`;
+
+  // Pre-inicializar todas las filas con "RIVERAS DEL SUQUIA" como encargado
+  for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
+    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
+  }
 
   // Agrupar registros por fecha
   const byDate = {};
@@ -597,7 +613,7 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
       cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
-      cambios[`${M.colEncargado}${fila}`] = "";
+      cambios[`${M.colEncargado}${fila}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
       fila++;
     }
   }
@@ -609,8 +625,48 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
     cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
     cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
-    cambios[`${M.colEncargado}${r}`] = "";
+    // El Encargado "RIVERAS DEL SUQUIA" ya está pre-asignado, se mantiene
   }
+
+  // ── Resumen de horas (desde fila 40, aprox. B43 en la planilla) ──
+  const RES_INI = 40;
+  cambios[`A${RES_INI}`]   = `RESUMEN HORAS TRABAJADAS — ${MESES_ES_PL[mes-1].toUpperCase()} ${anio}`;
+  cambios[`A${RES_INI+1}`] = "DIA";
+  cambios[`B${RES_INI+1}`] = "ENTRADA";
+  cambios[`C${RES_INI+1}`] = "SALIDA";
+  cambios[`D${RES_INI+1}`] = "HORAS";
+
+  let filaR   = RES_INI + 2;
+  let totalMin = 0;
+
+  Object.keys(byDate).sort().forEach(fechaKey => {
+    const { ingresos, salidas } = byDate[fechaKey];
+    const fecha    = new Date(fechaKey + "T12:00:00");
+    const diaLabel = `${INICIALES_DIA[fecha.getDay()]} ${fecha.getDate()}`;
+    let minDia     = 0;
+    const pares    = Math.min(ingresos.length, salidas.length);
+    for (let i = 0; i < pares; i++) {
+      const t1 = new Date(ingresos[i].hora);
+      const t2 = new Date(salidas[i].hora);
+      if (t2 > t1) minDia += (t2 - t1) / 60000;
+    }
+    const primerIngreso = ingresos[0]
+      ? new Date(ingresos[0].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
+    const ultimaSalida  = salidas[salidas.length - 1]
+      ? new Date(salidas[salidas.length - 1].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
+    const horasDia = minDia > 0
+      ? `${Math.floor(minDia / 60)}h ${String(Math.round(minDia % 60)).padStart(2, "0")}m`
+      : (ingresos.length > 0 ? "Incompleto" : "—");
+    cambios[`A${filaR}`] = diaLabel;
+    cambios[`B${filaR}`] = primerIngreso;
+    cambios[`C${filaR}`] = ultimaSalida;
+    cambios[`D${filaR}`] = horasDia;
+    totalMin += minDia;
+    filaR++;
+  });
+
+  cambios[`A${filaR}`] = "TOTAL HORAS DEL MES:";
+  cambios[`D${filaR}`] = `${Math.floor(totalMin / 60)}h ${String(Math.round(totalMin % 60)).padStart(2, "0")}m`;
 
   return cambios;
 }
@@ -632,8 +688,10 @@ async function aplicarCambiosAPlantilla(ab, cambios) {
 function modificarCeldasXml(xml, cambios) {
   const NS   = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
   const doc  = new DOMParser().parseFromString(xml, "application/xml");
+  const sheetData = doc.getElementsByTagNameNS(NS, "sheetData")[0];
   const cells = doc.getElementsByTagNameNS(NS, "c");
 
+  // Primero, modificar celdas existentes
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i];
     const ref  = cell.getAttribute("r");
@@ -670,6 +728,62 @@ function modificarCeldasXml(xml, cambios) {
     }
 
     cell.appendChild(is);
+    delete cambios[ref]; // Marcar como procesada
+  }
+
+  // Segundo, crear celdas que no existen
+  for (const ref in cambios) {
+    const entrada  = cambios[ref];
+    const esObj    = entrada !== null && typeof entrada === "object";
+    const valor    = esObj ? String(entrada.v ?? "") : String(entrada ?? "");
+
+    // Extraer fila del ref (ej: "G6" → fila 6)
+    const filaMatch = ref.match(/(\d+)$/);
+    if (!filaMatch) continue;
+    const fila = parseInt(filaMatch[1]);
+
+    // Buscar o crear la fila
+    let row = null;
+    const rows = doc.getElementsByTagNameNS(NS, "row");
+    for (let i = 0; i < rows.length; i++) {
+      if (parseInt(rows[i].getAttribute("r")) === fila) {
+        row = rows[i];
+        break;
+      }
+    }
+    if (!row) {
+      row = doc.createElementNS(NS, "row");
+      row.setAttribute("r", String(fila));
+      sheetData.appendChild(row);
+    }
+
+    // Crear la celda
+    const cell = doc.createElementNS(NS, "c");
+    cell.setAttribute("r", ref);
+    cell.setAttribute("t", "inlineStr");
+
+    const is = doc.createElementNS(NS, "is");
+    if (esObj && (entrada.bold || entrada.size)) {
+      const r   = doc.createElementNS(NS, "r");
+      const rPr = doc.createElementNS(NS, "rPr");
+      if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
+      if (entrada.size) {
+        const sz = doc.createElementNS(NS, "sz");
+        sz.setAttribute("val", String(entrada.size));
+        rPr.appendChild(sz);
+      }
+      r.appendChild(rPr);
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      r.appendChild(t);
+      is.appendChild(r);
+    } else {
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    }
+    cell.appendChild(is);
+    row.appendChild(cell);
   }
 
   return new XMLSerializer().serializeToString(doc);

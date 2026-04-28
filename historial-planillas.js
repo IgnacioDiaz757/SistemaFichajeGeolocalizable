@@ -231,14 +231,40 @@ function renderResumenMensual() {
   const grupos = {};
   asistenciasEmpleado.forEach(r => {
     const key = r.hora.slice(0, 7);
-    if (!grupos[key]) grupos[key] = { dias: new Set(), ingresos: 0, salidas: 0 };
+    if (!grupos[key]) grupos[key] = { dias: new Set(), ingresos: 0, salidas: 0, tieneRegistros: true };
     grupos[key].dias.add(r.hora.slice(0, 10));
     r.tipo === "ingreso" ? grupos[key].ingresos++ : grupos[key].salidas++;
   });
 
+  // Agregar meses con planillas generadas (sin registros de asistencia)
+  const planillasGeneradas = JSON.parse(localStorage.getItem("planillas_generadas") || "[]");
+  const empleadoNombre = empleadoActual?.nombre || "";
+  
+  console.log("Empleado actual:", empleadoNombre);
+  console.log("Planillas generadas:", planillasGeneradas);
+  
+  planillasGeneradas
+    .filter(p => p.empleado === empleadoNombre)
+    .forEach(p => {
+      console.log("Agregando mes:", p.mes);
+      if (!(p.mes in grupos)) {
+        grupos[p.mes] = { dias: new Set(), ingresos: 0, salidas: 0, tieneRegistros: false };
+      }
+    });
+
+  // Filtrar planillas eliminadas
+  const planillasEliminadas = JSON.parse(localStorage.getItem("planillas_eliminadas") || "[]");
+  
   let claves = Object.keys(grupos).sort().reverse();
   if (filtroAnio) claves = claves.filter(k => k.startsWith(filtroAnio));
   if (filtroMes)  claves = claves.filter(k => k.endsWith(`-${String(filtroMes).padStart(2, "0")}`));
+  
+  // Excluir meses marcados como eliminados para este empleado
+  claves = claves.filter(k => {
+    return !planillasEliminadas.some(p => p.empleado === empleadoNombre && p.mes === k);
+  });
+
+  console.log("Claves finales:", claves);
 
   if (!claves.length) {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Sin registros para el período seleccionado</td></tr>`;
@@ -250,10 +276,13 @@ function renderResumenMensual() {
     const g = grupos[key];
     const activo = key === mesSeleccionado ? ' class="mes-activo"' : "";
     const mesLabel = `${MESES[parseInt(mesNum)-1]} ${anio}`;
+    const diasText = g.tieneRegistros 
+      ? `${g.dias.size} día${g.dias.size !== 1 ? "s" : ""}`
+      : `<span style="color:var(--text-muted);font-size:12px">Planilla generada</span>`;
     return `
       <tr${activo} onclick="clickFilaMes('${key}')" style="cursor:pointer">
         <td class="nowrap"><strong>${mesLabel}</strong></td>
-        <td>${g.dias.size} día${g.dias.size !== 1 ? "s" : ""}</td>
+        <td>${diasText}</td>
         <td class="tipo-ingreso">▲ ${g.ingresos}</td>
         <td class="tipo-salida">▼ ${g.salidas}</td>
         <td style="text-align:center">
@@ -285,26 +314,49 @@ function clickFilaMes(key) {
 
 // ── Borrar mes ────────────────────────────────────────────
 async function borrarMes(key, mesLabel) {
-  const ids = asistenciasEmpleado
-    .filter(r => r.hora.startsWith(key))
-    .map(r => r.id);
+  if (!confirm(`¿Eliminar la planilla generada de ${mesLabel} de ${empleadoActual.nombre}?\n\nLos registros de asistencia se mantienen.`)) return;
 
-  if (!ids.length) return;
+  // Obtener el mes y año del key (formato: "YYYY-MM")
+  const [anio, mes] = key.split("-");
+  const mesNombre = MESES[parseInt(mes) - 1];
+  const patronBusca = `Planilla_${empleadoActual.nombre.replace(/\s+/g,"_")}_${mesNombre}_${anio}.xlsx`;
 
-  if (!confirm(`¿Eliminar los ${ids.length} registro${ids.length !== 1 ? "s" : ""} de ${mesLabel} de ${empleadoActual.nombre}?\n\nEsta acción no se puede deshacer.`)) return;
+  try {
+    // Listar archivos en el bucket "planillas"
+    const { data: archivos, error: listaError } = await db.storage
+      .from("planillas")
+      .list();
 
-  const { error } = await db.from("asistencias").delete().in("id", ids);
+    if (listaError) throw listaError;
 
-  if (error) {
-    alert("Error al eliminar: " + error.message);
-    return;
+    // Encontrar y borrar archivos que coincidan
+    const archivosBorrar = archivos.filter(f => f.name.includes(patronBusca));
+
+    for (const archivo of archivosBorrar) {
+      const { error: delError } = await db.storage
+        .from("planillas")
+        .remove([archivo.name]);
+
+      if (delError) throw delError;
+    }
+
+    // Marcar la planilla como eliminada en localStorage
+    const planillasEliminadas = JSON.parse(localStorage.getItem("planillas_eliminadas") || "[]");
+    if (!planillasEliminadas.some(p => p.empleado === empleadoActual.nombre && p.mes === key)) {
+      planillasEliminadas.push({ empleado: empleadoActual.nombre, mes: key });
+      localStorage.setItem("planillas_eliminadas", JSON.stringify(planillasEliminadas));
+    }
+
+    // Remover de planillas generadas
+    const planillasGeneradas = JSON.parse(localStorage.getItem("planillas_generadas") || "[]");
+    const nuevasPlanillas = planillasGeneradas.filter(p => !(p.empleado === empleadoActual.nombre && p.mes === key));
+    localStorage.setItem("planillas_generadas", JSON.stringify(nuevasPlanillas));
+
+    alert("✓ Planilla eliminada del historial. Los registros de asistencia se mantienen.");
+    renderPanelHistorial();
+  } catch (e) {
+    alert("Error al eliminar la planilla: " + e.message);
   }
-
-  // Actualizar caché local
-  asistenciasEmpleado = asistenciasEmpleado.filter(r => !r.hora.startsWith(key));
-  if (mesSeleccionado === key) mesSeleccionado = null;
-
-  renderPanelHistorial();
 }
 
 // ── Asistencia diaria ─────────────────────────────────────
@@ -464,6 +516,11 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[M.contratista] = contratista.toUpperCase();
   cambios[M.mesAnio]     = `${MESES[mes - 1]}-${String(anio).slice(2)}`;
 
+  // Pre-inicializar todas las filas con "RIVERAS DEL SUQUIA" como encargado en negrita
+  for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
+    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
+  }
+
   const byDate = {};
   registros.forEach(r => {
     const fecha = r.hora.slice(0, 10);
@@ -488,7 +545,7 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
       cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
-      cambios[`${M.colEncargado}${fila}`] = "";
+      cambios[`${M.colEncargado}${fila}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
       fila++;
     }
   }
@@ -498,7 +555,7 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
     cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
     cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
-    cambios[`${M.colEncargado}${r}`] = "";
+    // El Encargado "RIVERAS DEL SUQUIA" ya está pre-asignado, se mantiene
   }
 
   return cambios;
