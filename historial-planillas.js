@@ -32,7 +32,7 @@ const DIAS_ES  = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 
 async function cargarEmpleados() {
   const { data } = await db.from("empleados").select("*").order("nombre");
-  empleados = (data || []).filter(e => Array.isArray(e.descriptors) && e.descriptors.length > 0);
+  empleados = data || [];
   renderListaEmpleados();
 }
 
@@ -84,7 +84,7 @@ function renderListaEmpleados() {
       <div class="persona-inicial">${esc(e.nombre.charAt(0).toUpperCase())}</div>
       <div class="persona-info">
         <span class="persona-nombre">${esc(e.nombre)}</span>
-        <span class="persona-sub">${esc([e.contratista, e.obra].filter(Boolean).join(" · ") || "Sin datos")}</span>
+        <span class="persona-sub">${esc([...new Set([e.contratista, e.obra].filter(Boolean))].join(" · ") || "Sin datos")}</span>
       </div>
       <span style="font-size:15px;opacity:0.6">👤</span>
     </div>
@@ -111,11 +111,25 @@ async function seleccionarEmpleado(id) {
       <p>Cargando historial de ${esc(emp.nombre)}…</p>
     </div>`;
 
-  const { data, error } = await db
+  // Intento 1: ilike con el nombre tal cual
+  let { data, error } = await db
     .from("asistencias")
     .select("*")
-    .eq("empleado", emp.nombre)
+    .ilike("empleado", emp.nombre)
     .order("hora", { ascending: true });
+
+  // Intento 2: si no hay resultados, buscar sin acentos (cubre "Garcia" vs "García")
+  if (!error && (!data || data.length === 0)) {
+    const sinAcentos = emp.nombre
+      .normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    if (sinAcentos.toLowerCase() !== emp.nombre.toLowerCase()) {
+      ({ data, error } = await db
+        .from("asistencias")
+        .select("*")
+        .ilike("empleado", sinAcentos)
+        .order("hora", { ascending: true }));
+    }
+  }
 
   if (error) {
     document.getElementById("panel-historial").innerHTML =
@@ -170,6 +184,34 @@ function renderPanelHistorial() {
         </div>
         <button class="btn-outline-gris" onclick="limpiarFiltroTiempo()">✕ Limpiar</button>
       </div>
+    </div>
+
+    ${asistenciasEmpleado.length === 0 ? `
+    <div style="background:var(--danger-lt);border:1px solid #ef9a9a;border-radius:10px;padding:14px 18px;margin-bottom:16px;">
+      <strong style="color:var(--danger);font-size:13px;">⚠ No se encontraron registros de asistencia para "${esc(e.nombre)}"</strong>
+      <p style="font-size:12px;color:var(--text-muted);margin:6px 0 10px;">
+        El empleado puede haberse registrado con un nombre distinto. Buscá como está guardado en asistencias:
+      </p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="buscar-nombre-alt" type="text" placeholder="Escribí el nombre exacto guardado en asistencias…"
+               style="flex:1;min-width:220px;padding:7px 11px;border:1px solid var(--border);border-radius:7px;font-size:13px;background:var(--input-bg);color:var(--text)">
+        <button class="btn btn-azul" style="padding:7px 14px;font-size:13px" onclick="buscarNombreAlternativo()">Buscar</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+        Tip: revisá en el panel admin cómo aparece el nombre en la columna "Empleado" de la tabla de registros.
+      </p>
+    </div>` : ""}
+
+    <div class="seccion-titulo">Generar planilla</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:4px 0 12px">
+      <select id="gp-mes" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text)">
+        ${MESES.map((m, i) => `<option value="${i+1}"${i+1 === new Date().getMonth()+1 ? " selected" : ""}>${m}</option>`).join("")}
+      </select>
+      <select id="gp-anio" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text)">
+        ${[...Array(4)].map((_, i) => new Date().getFullYear() - i).map(y => `<option value="${y}">${y}</option>`).join("")}
+      </select>
+      <button class="btn btn-azul" style="padding:6px 14px" onclick="descargarPlanillaMes()">⬇ Descargar planilla</button>
+      <span id="gp-estado" style="font-size:13px;color:var(--text-muted)"></span>
     </div>
 
     <div class="seccion-titulo">Resumen mensual</div>
@@ -416,6 +458,72 @@ function verFoto(url) {
   document.getElementById("lightbox").style.display = "flex";
 }
 
+// ── Buscar registros con nombre alternativo ───────────────
+async function buscarNombreAlternativo() {
+  const input = document.getElementById("buscar-nombre-alt");
+  if (!input) return;
+  const nombreAlt = input.value.trim();
+  if (!nombreAlt) return;
+
+  input.disabled = true;
+  const { data, error } = await db
+    .from("asistencias")
+    .select("*")
+    .ilike("empleado", nombreAlt)
+    .order("hora", { ascending: true });
+  input.disabled = false;
+
+  if (error) { alert("Error al buscar: " + error.message); return; }
+  if (!data || data.length === 0) {
+    alert(`No se encontraron registros con el nombre "${nombreAlt}".\nRevisá en admin.html cómo aparece exactamente en la columna Empleado.`);
+    return;
+  }
+
+  asistenciasEmpleado = data;
+  renderPanelHistorial();
+}
+
+// ── Descargar planilla (cualquier mes, sin preview) ───────
+async function descargarPlanillaMes() {
+  const mes    = parseInt(document.getElementById("gp-mes").value);
+  const anio   = parseInt(document.getElementById("gp-anio").value);
+  const emp    = empleadoActual;
+  const estado = document.getElementById("gp-estado");
+  if (!emp) return;
+
+  estado.textContent = "Generando…";
+  try {
+    const desde = `${anio}-${String(mes).padStart(2,"0")}-01`;
+    const hasta = new Date(anio, mes, 1).toISOString().slice(0, 10);
+    const registrosMes = asistenciasEmpleado.filter(r => {
+      const d = r.hora.slice(0, 10);
+      return d >= desde && d < hasta;
+    });
+
+    const res = await fetch("public/planilla-horario.xlsx");
+    if (!res.ok) throw new Error("No se pudo cargar la plantilla");
+    const ab = await res.arrayBuffer();
+
+    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anio);
+    const blob    = await aplicarCambiosAPlantilla(ab, cambios);
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Planilla_${emp.nombre.replace(/\s+/g,"_")}_${MESES[mes-1]}_${anio}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+
+    estado.textContent = registrosMes.length > 0
+      ? `✓ ${registrosMes.length} registros incluidos`
+      : "✓ Descargado (sin registros para ese mes)";
+    setTimeout(() => { estado.textContent = ""; }, 3000);
+  } catch (err) {
+    estado.textContent = "⚠ " + err.message;
+  }
+}
+
 // ── Previsualizar planilla ────────────────────────────────
 async function previsualizarPlanilla(mesKey) {
   const [anio, mesNum] = mesKey.split("-");
@@ -455,11 +563,18 @@ async function previsualizarPlanilla(mesKey) {
 
     // Generar blob
     statusEl.textContent = "Generando Excel…";
-    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anioN);
-    const blob    = await aplicarCambiosAPlantilla(ab, cambios);
+    const cambios  = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anioN);
+    const blob     = await aplicarCambiosAPlantilla(ab, cambios);
+    const nombreDescarga = `Planilla_${emp.nombre.replace(/\s+/g,"_")}_${MESES[mes-1]}_${anio}.xlsx`;
 
-    // Subir a Supabase Storage bucket 'planillas'
-    statusEl.textContent = "Subiendo archivo…";
+    // ── Descarga directa vía blob (siempre disponible, sin depender de Storage) ──
+    const blobUrl         = URL.createObjectURL(blob);
+    btnDesc.href          = blobUrl;
+    btnDesc.download      = nombreDescarga;
+    btnDesc.style.display = "inline-flex";
+
+    // ── Intentar subir a Supabase para la vista previa en Office Online (opcional) ──
+    statusEl.textContent = "Preparando vista previa…";
     const fileName = `planilla_${sanitizarNombre(emp.nombre)}_${anio}-${String(mes).padStart(2,"0")}.xlsx`;
 
     const { error: uploadErr } = await db.storage
@@ -470,21 +585,15 @@ async function previsualizarPlanilla(mesKey) {
       });
 
     if (uploadErr) {
-      if (uploadErr.message?.includes("Bucket not found") || uploadErr.message?.includes("bucket")) {
-        throw new Error('El bucket "planillas" no existe en Supabase Storage. Crealo como bucket público desde el panel de Supabase.');
-      }
-      throw new Error("Error al subir: " + uploadErr.message);
+      // La descarga ya está disponible; solo avisamos que la preview no pudo cargarse
+      statusEl.textContent = "Vista previa no disponible — usá el botón de descarga";
+      statusEl.style.color = "var(--text-muted)";
+      setTimeout(() => { statusEl.style.display = "none"; }, 4000);
+      return;
     }
 
-    // Obtener URL pública
+    // Obtener URL pública y abrir en Office Online
     const { data: { publicUrl } } = db.storage.from("planillas").getPublicUrl(fileName);
-
-    // Activar botón de descarga directa
-    btnDesc.href          = publicUrl;
-    btnDesc.download      = `Planilla_${emp.nombre.replace(/\s+/g,"_")}_${MESES[mes-1]}_${anio}.xlsx`;
-    btnDesc.style.display = "inline-flex";
-
-    // Abrir en Office Online
     statusEl.textContent = "Abriendo previsualización…";
     const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
     iframe.src = viewerUrl;
@@ -558,6 +667,46 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     // El Encargado "RIVERAS DEL SUQUIA" ya está pre-asignado, se mantiene
   }
 
+  // ── Resumen de horas (desde fila 40, aprox. B43 en la planilla) ──
+  const RES_INI = 40;
+  cambios[`A${RES_INI}`]   = `RESUMEN HORAS TRABAJADAS — ${MESES[mes-1].toUpperCase()} ${anio}`;
+  cambios[`A${RES_INI+1}`] = "DIA";
+  cambios[`B${RES_INI+1}`] = "ENTRADA";
+  cambios[`C${RES_INI+1}`] = "SALIDA";
+  cambios[`D${RES_INI+1}`] = "HORAS";
+
+  let filaR    = RES_INI + 2;
+  let totalMin = 0;
+
+  Object.keys(byDate).sort().forEach(fechaKey => {
+    const { ingresos, salidas } = byDate[fechaKey];
+    const fecha    = new Date(fechaKey + "T12:00:00");
+    const diaLabel = `${DIAS_INI[fecha.getDay()]} ${fecha.getDate()}`;
+    let minDia     = 0;
+    const pares    = Math.min(ingresos.length, salidas.length);
+    for (let i = 0; i < pares; i++) {
+      const t1 = new Date(ingresos[i].hora);
+      const t2 = new Date(salidas[i].hora);
+      if (t2 > t1) minDia += (t2 - t1) / 60000;
+    }
+    const primerIngreso = ingresos[0]
+      ? new Date(ingresos[0].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
+    const ultimaSalida  = salidas[salidas.length - 1]
+      ? new Date(salidas[salidas.length - 1].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
+    const horasDia = minDia > 0
+      ? `${Math.floor(minDia / 60)}h ${String(Math.round(minDia % 60)).padStart(2, "0")}m`
+      : (ingresos.length > 0 ? "Incompleto" : "—");
+    cambios[`A${filaR}`] = diaLabel;
+    cambios[`B${filaR}`] = primerIngreso;
+    cambios[`C${filaR}`] = ultimaSalida;
+    cambios[`D${filaR}`] = horasDia;
+    totalMin += minDia;
+    filaR++;
+  });
+
+  cambios[`A${filaR}`] = "TOTAL HORAS DEL MES:";
+  cambios[`D${filaR}`] = `${Math.floor(totalMin / 60)}h ${String(Math.round(totalMin % 60)).padStart(2, "0")}m`;
+
   return cambios;
 }
 
@@ -573,10 +722,12 @@ async function aplicarCambiosAPlantilla(ab, cambios) {
 }
 
 function modificarCeldasXml(xml, cambios) {
-  const NS   = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-  const doc  = new DOMParser().parseFromString(xml, "application/xml");
-  const cells = doc.getElementsByTagNameNS(NS, "c");
+  const NS        = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const doc       = new DOMParser().parseFromString(xml, "application/xml");
+  const sheetData = doc.getElementsByTagNameNS(NS, "sheetData")[0];
+  const cells     = doc.getElementsByTagNameNS(NS, "c");
 
+  // Modificar celdas existentes en la plantilla
   for (let i = 0; i < cells.length; i++) {
     const cell = cells[i];
     const ref  = cell.getAttribute("r");
@@ -610,6 +761,56 @@ function modificarCeldasXml(xml, cambios) {
       is.appendChild(t);
     }
     cell.appendChild(is);
+    delete cambios[ref];
+  }
+
+  // Insertar filas/celdas nuevas que no existen en la plantilla (resumen de horas)
+  for (const ref in cambios) {
+    const entrada = cambios[ref];
+    const esObj   = entrada !== null && typeof entrada === "object";
+    const valor   = esObj ? String(entrada.v ?? "") : String(entrada ?? "");
+
+    const filaMatch = ref.match(/(\d+)$/);
+    if (!filaMatch) continue;
+    const filaNum = parseInt(filaMatch[1]);
+
+    let row = null;
+    const rows = doc.getElementsByTagNameNS(NS, "row");
+    for (let i = 0; i < rows.length; i++) {
+      if (parseInt(rows[i].getAttribute("r")) === filaNum) { row = rows[i]; break; }
+    }
+    if (!row) {
+      row = doc.createElementNS(NS, "row");
+      row.setAttribute("r", String(filaNum));
+      sheetData.appendChild(row);
+    }
+
+    const cellEl = doc.createElementNS(NS, "c");
+    cellEl.setAttribute("r", ref);
+    cellEl.setAttribute("t", "inlineStr");
+
+    const is = doc.createElementNS(NS, "is");
+    if (esObj && (entrada.bold || entrada.size)) {
+      const rEl  = doc.createElementNS(NS, "r");
+      const rPr  = doc.createElementNS(NS, "rPr");
+      if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
+      if (entrada.size) {
+        const sz = doc.createElementNS(NS, "sz");
+        sz.setAttribute("val", String(entrada.size));
+        rPr.appendChild(sz);
+      }
+      rEl.appendChild(rPr);
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      rEl.appendChild(t);
+      is.appendChild(rEl);
+    } else {
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    }
+    cellEl.appendChild(is);
+    row.appendChild(cellEl);
   }
 
   return new XMLSerializer().serializeToString(doc);
