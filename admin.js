@@ -545,26 +545,39 @@ async function generarPlanilla() {
     const cambios = construirCambios(nombreEmp, puesto, contratista, data, mes, anio);
     const blob    = await aplicarCambiosAPlantilla(ab, cambios);
 
-    // Guardar en Supabase Storage (bucket "planillas")
-    const nombreArchivo = `Planilla_${nombreEmp.replace(/\s+/g,"_")}_${MESES_ES_PL[mes-1]}_${anio}.xlsx`;
-    const archivo = new File([blob], nombreArchivo, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    
-    estado.textContent = "Guardando en historial...";
-    const { error: uploadError } = await db.storage
-      .from("planillas")
-      .upload(`${new Date().getTime()}_${nombreArchivo}`, archivo);
-    
-    if (uploadError) throw new Error("Error al guardar: " + uploadError.message);
+    // Descargar localmente (siempre)
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Planilla_${nombreEmp.replace(/\s+/g,"_")}_${MESES_ES_PL[mes-1]}_${anio}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    estado.textContent = "✓ Descargada";
 
-    // Registrar en localStorage que se generó una planilla para este empleado y mes
-    const planillasGeneradas = JSON.parse(localStorage.getItem("planillas_generadas") || "[]");
-    const mesKey = `${anio}-${String(mes).padStart(2, "0")}`;
-    if (!planillasGeneradas.some(p => p.empleado === nombreEmp && p.mes === mesKey)) {
-      planillasGeneradas.push({ empleado: nombreEmp, mes: mesKey, fecha: new Date().toISOString() });
-      localStorage.setItem("planillas_generadas", JSON.stringify(planillasGeneradas));
-    }
+    // Guardar en historial (JSON metadata + Storage)
+    try {
+      const sanitizado = nombreEmp.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/\s+/g,"_").replace(/[^a-zA-Z0-9_\-]/g,"").slice(0,50);
+      const fn = `planilla_${sanitizado}_${anio}-${String(mes).padStart(2,"0")}.xlsx`;
+      await db.storage.from("planillas").upload(fn, blob, {
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        upsert: true,
+      });
+      // Actualizar JSON de metadatos del empleado
+      const metaFn = `meta_${sanitizado}.json`;
+      const mesKey = `${anio}-${String(mes).padStart(2,"0")}`;
+      let meses = [];
+      try {
+        const { data: { publicUrl } } = db.storage.from("planillas").getPublicUrl(metaFn);
+        const r = await fetch(`${publicUrl}?t=${Date.now()}`);
+        if (r.ok) meses = await r.json();
+      } catch { /* primera vez, empieza vacío */ }
+      if (!meses.includes(mesKey)) meses.push(mesKey);
+      const metaBlob = new Blob([JSON.stringify(meses)], { type: "application/json" });
+      await db.storage.from("planillas").upload(metaFn, metaBlob, { upsert: true });
+      estado.textContent = "✓ Descargada y guardada en historial";
+    } catch { /* silencioso — historial es opcional */ }
 
-    estado.textContent = "✓ Planilla guardada en historial";
     setTimeout(() => { estado.textContent = ""; }, 3000);
   } catch (e) {
     estado.textContent = "Error: " + e.message;
@@ -581,9 +594,8 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[M.contratista] = contratista.toUpperCase();
   cambios[M.mesAnio]     = `${MESES_ES_PL[mes - 1]}-${String(anio).slice(2)}`;
 
-  // Pre-inicializar todas las filas con "RIVERAS DEL SUQUIA" como encargado
   for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
-    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
+    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", smallStyle: true };
   }
 
   // Agrupar registros por fecha
@@ -601,8 +613,22 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
 
   for (let d = 1; d <= diasDelMes && fila <= M.dataEndRow; d++) {
     const fechaKey  = `${anio}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const inicial  = INICIALES_DIA[new Date(anio, mes - 1, d).getDay()];
-    const diaLabel = `${inicial} ${d}`;
+    const diaSemana = new Date(anio, mes - 1, d).getDay();
+    const inicial   = INICIALES_DIA[diaSemana];
+    const diaLabel  = `${inicial} ${d}`;
+
+    if (diaSemana === 0) {
+      cambios[`A${fila}`] = { v: diaLabel, sundayCol: "A" };
+      cambios[`B${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`C${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`D${fila}`] = { v: "", sundayCol: "D" };
+      cambios[`E${fila}`] = { v: "", sundayCol: "E" };
+      cambios[`F${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`G${fila}`] = { v: "", sundayCol: "BCFG" };
+      fila++;
+      continue;
+    }
+
     const { ingresos = [], salidas = [] } = byDate[fechaKey] || {};
     const maxF = Math.max(ingresos.length, salidas.length, 1);
 
@@ -613,7 +639,6 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
       cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
-      cambios[`${M.colEncargado}${fila}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
       fila++;
     }
   }
@@ -625,48 +650,24 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
     cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
     cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
-    // El Encargado "RIVERAS DEL SUQUIA" ya está pre-asignado, se mantiene
   }
 
-  // ── Resumen de horas (desde fila 40, aprox. B43 en la planilla) ──
+  // ── Resumen de horas — solo total mensual ──
   const RES_INI = 40;
-  cambios[`A${RES_INI}`]   = `RESUMEN HORAS TRABAJADAS — ${MESES_ES_PL[mes-1].toUpperCase()} ${anio}`;
-  cambios[`A${RES_INI+1}`] = "DIA";
-  cambios[`B${RES_INI+1}`] = "ENTRADA";
-  cambios[`C${RES_INI+1}`] = "SALIDA";
-  cambios[`D${RES_INI+1}`] = "HORAS";
-
-  let filaR   = RES_INI + 2;
   let totalMin = 0;
-
-  Object.keys(byDate).sort().forEach(fechaKey => {
+  Object.keys(byDate).forEach(fechaKey => {
     const { ingresos, salidas } = byDate[fechaKey];
-    const fecha    = new Date(fechaKey + "T12:00:00");
-    const diaLabel = `${INICIALES_DIA[fecha.getDay()]} ${fecha.getDate()}`;
-    let minDia     = 0;
-    const pares    = Math.min(ingresos.length, salidas.length);
+    const pares = Math.min(ingresos.length, salidas.length);
     for (let i = 0; i < pares; i++) {
       const t1 = new Date(ingresos[i].hora);
       const t2 = new Date(salidas[i].hora);
-      if (t2 > t1) minDia += (t2 - t1) / 60000;
+      if (t2 > t1) totalMin += (t2 - t1) / 60000;
     }
-    const primerIngreso = ingresos[0]
-      ? new Date(ingresos[0].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
-    const ultimaSalida  = salidas[salidas.length - 1]
-      ? new Date(salidas[salidas.length - 1].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
-    const horasDia = minDia > 0
-      ? `${Math.floor(minDia / 60)}h ${String(Math.round(minDia % 60)).padStart(2, "0")}m`
-      : (ingresos.length > 0 ? "Incompleto" : "—");
-    cambios[`A${filaR}`] = diaLabel;
-    cambios[`B${filaR}`] = primerIngreso;
-    cambios[`C${filaR}`] = ultimaSalida;
-    cambios[`D${filaR}`] = horasDia;
-    totalMin += minDia;
-    filaR++;
   });
-
-  cambios[`A${filaR}`] = "TOTAL HORAS DEL MES:";
-  cambios[`D${filaR}`] = `${Math.floor(totalMin / 60)}h ${String(Math.round(totalMin % 60)).padStart(2, "0")}m`;
+  const totalStr = `${Math.floor(totalMin / 60)}h ${String(Math.round(totalMin % 60)).padStart(2, "0")}m`;
+  cambios[`A${RES_INI}`]   = `RESUMEN HORAS TRABAJADAS — ${MESES_ES_PL[mes-1].toUpperCase()} ${anio}`;
+  cambios[`A${RES_INI+1}`] = "TOTAL HORAS DEL MES:";
+  cambios[`B${RES_INI+1}`] = totalStr;
 
   return cambios;
 }
@@ -674,8 +675,14 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
 // Carga el XLSX como ZIP, modifica el XML de la hoja y devuelve un Blob
 async function aplicarCambiosAPlantilla(ab, cambios) {
   const zip = await JSZip.loadAsync(ab);
+
+  let stylesXml = await zip.file("xl/styles.xml").async("string");
+  const { xml: stylesXml2, idx: smallStyleIdx } = agregarEstiloLetraChica(stylesXml);
+  const { xml: newStylesXml, sundayStyles }      = agregarEstilosDomingo(stylesXml2);
+  zip.file("xl/styles.xml", newStylesXml);
+
   let sheetXml = await zip.file("xl/worksheets/sheet1.xml").async("string");
-  sheetXml = modificarCeldasXml(sheetXml, cambios);
+  sheetXml = modificarCeldasXml(sheetXml, cambios, smallStyleIdx, sundayStyles);
   zip.file("xl/worksheets/sheet1.xml", sheetXml);
   return zip.generateAsync({
     type: "blob",
@@ -683,9 +690,83 @@ async function aplicarCambiosAPlantilla(ab, cambios) {
   });
 }
 
-// Modifica celdas en el XML preservando estilos originales.
-// cambios[addr] = string (texto plano) o { v, bold, size } (rich text con formato)
-function modificarCeldasXml(xml, cambios) {
+function agregarEstiloLetraChica(stylesXml) {
+  const NS  = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const doc = new DOMParser().parseFromString(stylesXml, "application/xml");
+
+  const fontsEl    = doc.getElementsByTagNameNS(NS, "fonts")[0];
+  const newFontIdx = parseInt(fontsEl.getAttribute("count"));
+  const font = doc.createElementNS(NS, "font");
+  font.appendChild(doc.createElementNS(NS, "b"));
+  const sz = doc.createElementNS(NS, "sz");   sz.setAttribute("val", "10");      font.appendChild(sz);
+  const nm = doc.createElementNS(NS, "name"); nm.setAttribute("val", "Calibri"); font.appendChild(nm);
+  const fm = doc.createElementNS(NS, "family"); fm.setAttribute("val", "2");     font.appendChild(fm);
+  fontsEl.appendChild(font);
+  fontsEl.setAttribute("count", String(newFontIdx + 1));
+
+  const cellXfsEl = doc.getElementsByTagNameNS(NS, "cellXfs")[0];
+  const newXfIdx  = parseInt(cellXfsEl.getAttribute("count"));
+  const xf = doc.createElementNS(NS, "xf");
+  xf.setAttribute("numFmtId", "0");
+  xf.setAttribute("fontId",   String(newFontIdx));
+  xf.setAttribute("fillId",   "0");
+  xf.setAttribute("borderId", "1");
+  xf.setAttribute("xfId",     "0");
+  xf.setAttribute("applyFont",      "1");
+  xf.setAttribute("applyFill",      "1");
+  xf.setAttribute("applyBorder",    "1");
+  xf.setAttribute("applyAlignment", "1");
+  const align = doc.createElementNS(NS, "alignment");
+  align.setAttribute("horizontal", "center");
+  align.setAttribute("vertical",   "center");
+  align.setAttribute("wrapText",    "1");
+  xf.appendChild(align);
+  cellXfsEl.appendChild(xf);
+  cellXfsEl.setAttribute("count", String(newXfIdx + 1));
+
+  return { xml: new XMLSerializer().serializeToString(doc), idx: newXfIdx };
+}
+
+function agregarEstilosDomingo(stylesXml) {
+  const NS  = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const doc = new DOMParser().parseFromString(stylesXml, "application/xml");
+
+  const cellXfsEl = doc.getElementsByTagNameNS(NS, "cellXfs")[0];
+  const baseIdx   = parseInt(cellXfsEl.getAttribute("count"));
+
+  function makeXf(fontId, borderId, alignV) {
+    const xf = doc.createElementNS(NS, "xf");
+    xf.setAttribute("numFmtId", "0");
+    xf.setAttribute("fontId",   String(fontId));
+    xf.setAttribute("fillId",   "3"); // mismo gris que encabezados
+    xf.setAttribute("borderId", String(borderId));
+    xf.setAttribute("xfId",     "0");
+    xf.setAttribute("applyFont",      "1");
+    xf.setAttribute("applyFill",      "1");
+    xf.setAttribute("applyBorder",    "1");
+    xf.setAttribute("applyAlignment", "1");
+    const align = doc.createElementNS(NS, "alignment");
+    align.setAttribute("horizontal", "left");
+    align.setAttribute("vertical",   alignV);
+    align.setAttribute("wrapText",    "1");
+    xf.appendChild(align);
+    cellXfsEl.appendChild(xf);
+  }
+
+  makeXf(2, 1, "top");    // col A    (baseIdx + 0)
+  makeXf(0, 1, "center"); // col B,C,F,G (baseIdx + 1)
+  makeXf(0, 2, "center"); // col D    (baseIdx + 2)
+  makeXf(0, 4, "center"); // col E    (baseIdx + 3)
+
+  cellXfsEl.setAttribute("count", String(baseIdx + 4));
+
+  return {
+    xml: new XMLSerializer().serializeToString(doc),
+    sundayStyles: { A: baseIdx, BCFG: baseIdx + 1, D: baseIdx + 2, E: baseIdx + 3 },
+  };
+}
+
+function modificarCeldasXml(xml, cambios, smallStyleIdx, sundayStyles) {
   const NS   = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
   const doc  = new DOMParser().parseFromString(xml, "application/xml");
   const sheetData = doc.getElementsByTagNameNS(NS, "sheetData")[0];
@@ -706,8 +787,17 @@ function modificarCeldasXml(xml, cambios) {
 
     const is = doc.createElementNS(NS, "is");
 
-    if (esObj && (entrada.bold || entrada.size)) {
-      // Rich text: <r><rPr><b/><sz val="14"/></rPr><t>valor</t></r>
+    if (esObj && entrada.sundayCol && sundayStyles) {
+      cell.setAttribute("s", String(sundayStyles[entrada.sundayCol] ?? sundayStyles.BCFG));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && entrada.smallStyle && smallStyleIdx != null) {
+      cell.setAttribute("s", String(smallStyleIdx));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && (entrada.bold || entrada.size)) {
       const r   = doc.createElementNS(NS, "r");
       const rPr = doc.createElementNS(NS, "rPr");
       if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
@@ -715,6 +805,9 @@ function modificarCeldasXml(xml, cambios) {
         const sz = doc.createElementNS(NS, "sz");
         sz.setAttribute("val", String(entrada.size));
         rPr.appendChild(sz);
+        const szCs = doc.createElementNS(NS, "szCs");
+        szCs.setAttribute("val", String(entrada.size));
+        rPr.appendChild(szCs);
       }
       r.appendChild(rPr);
       const t = doc.createElementNS(NS, "t");
@@ -728,7 +821,7 @@ function modificarCeldasXml(xml, cambios) {
     }
 
     cell.appendChild(is);
-    delete cambios[ref]; // Marcar como procesada
+    delete cambios[ref];
   }
 
   // Segundo, crear celdas que no existen
@@ -763,7 +856,17 @@ function modificarCeldasXml(xml, cambios) {
     cell.setAttribute("t", "inlineStr");
 
     const is = doc.createElementNS(NS, "is");
-    if (esObj && (entrada.bold || entrada.size)) {
+    if (esObj && entrada.sundayCol && sundayStyles) {
+      cell.setAttribute("s", String(sundayStyles[entrada.sundayCol] ?? sundayStyles.BCFG));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && entrada.smallStyle && smallStyleIdx != null) {
+      cell.setAttribute("s", String(smallStyleIdx));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && (entrada.bold || entrada.size)) {
       const r   = doc.createElementNS(NS, "r");
       const rPr = doc.createElementNS(NS, "rPr");
       if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
@@ -771,6 +874,9 @@ function modificarCeldasXml(xml, cambios) {
         const sz = doc.createElementNS(NS, "sz");
         sz.setAttribute("val", String(entrada.size));
         rPr.appendChild(sz);
+        const szCs = doc.createElementNS(NS, "szCs");
+        szCs.setAttribute("val", String(entrada.size));
+        rPr.appendChild(szCs);
       }
       r.appendChild(rPr);
       const t = doc.createElementNS(NS, "t");
@@ -787,6 +893,71 @@ function modificarCeldasXml(xml, cambios) {
   }
 
   return new XMLSerializer().serializeToString(doc);
+}
+
+// ── Planilla de ejemplo ───────────────────────────────────
+
+async function generarPlanillaEjemplo() {
+  const mes    = parseInt(document.getElementById("pl-mes").value);
+  const anio   = parseInt(document.getElementById("pl-anio").value);
+  const estado = document.getElementById("pl-estado");
+
+  estado.textContent = "Generando planilla de ejemplo…";
+
+  // Horarios variados para que el modelo se vea realista
+  const tablaHorarios = [
+    { e: [7, 20], s: [17,  0] },
+    { e: [7, 30], s: [17, 30] },
+    { e: [7, 15], s: [16, 45] },
+    { e: [7, 45], s: [17, 15] },
+    { e: [7, 25], s: [17,  0] },
+    { e: [7, 30], s: [16, 30] },
+  ];
+
+  const registros = [];
+  const diasDelMes = new Date(anio, mes, 0).getDate();
+
+  for (let d = 1; d <= diasDelMes; d++) {
+    const diaSemana = new Date(anio, mes - 1, d).getDay();
+    if (diaSemana === 0) continue; // sin domingos
+
+    const h = tablaHorarios[(d - 1) % tablaHorarios.length];
+    registros.push({
+      tipo:  "ingreso",
+      hora:  new Date(anio, mes - 1, d, h.e[0], h.e[1], 0).toISOString(),
+      lugar: "RIVERAS DEL SUQUIA",
+    });
+    registros.push({
+      tipo:  "salida",
+      hora:  new Date(anio, mes - 1, d, h.s[0], h.s[1], 0).toISOString(),
+      lugar: "RIVERAS DEL SUQUIA",
+    });
+  }
+
+  try {
+    const res = await fetch("public/planilla-horario.xlsx");
+    if (!res.ok) throw new Error("No se pudo cargar la plantilla");
+    const ab = await res.arrayBuffer();
+
+    const cambios = construirCambios(
+      "EMPLEADO EJEMPLO", "OPERARIO", "RIVERAS DEL SUQUIA",
+      registros, mes, anio
+    );
+    const blob = await aplicarCambiosAPlantilla(ab, cambios);
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `Planilla_EJEMPLO_${MESES_ES_PL[mes - 1]}_${anio}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+
+    estado.textContent = "✓ Ejemplo descargado";
+    setTimeout(() => { estado.textContent = ""; }, 3000);
+  } catch (e) {
+    estado.textContent = "Error: " + e.message;
+  }
 }
 
 // ── Sesión ────────────────────────────────────────────────

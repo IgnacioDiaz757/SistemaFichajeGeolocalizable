@@ -8,6 +8,7 @@ let obrasLista = [];
 let contratistasLista = [];
 let empleadoActual = null;
 let asistenciasEmpleado = [];
+let planillasStorage = []; // meses "YYYY-MM" con planilla en Storage
 let mesSeleccionado = null; // "YYYY-MM" | null
 let filtroEmpresa = "";
 let filtroObra = "";
@@ -138,6 +139,10 @@ async function seleccionarEmpleado(id) {
   }
 
   asistenciasEmpleado = data || [];
+
+  // Leer historial de planillas desde archivo JSON en Storage
+  planillasStorage = await cargarMetaEmpleado(emp.nombre);
+
   renderPanelHistorial();
 }
 
@@ -210,7 +215,7 @@ function renderPanelHistorial() {
       <select id="gp-anio" style="padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text)">
         ${[...Array(4)].map((_, i) => new Date().getFullYear() - i).map(y => `<option value="${y}">${y}</option>`).join("")}
       </select>
-      <button class="btn btn-azul" style="padding:6px 14px" onclick="descargarPlanillaMes()">⬇ Descargar planilla</button>
+      <button class="btn btn-azul" style="padding:6px 14px" onclick="descargarPlanillaMes()">💾 Guardar en historial</button>
       <span id="gp-estado" style="font-size:13px;color:var(--text-muted)"></span>
     </div>
 
@@ -219,7 +224,7 @@ function renderPanelHistorial() {
       <table>
         <thead>
           <tr>
-            <th>Período</th><th>Días trabajados</th><th>Ingresos</th><th>Salidas</th>
+            <th>Período</th><th>Días trabajados</th><th>Ingresos</th><th>Salidas</th><th style="text-align:center">Descargar</th><th style="text-align:center">Ver</th><th></th>
             <th style="text-align:center">Planilla</th><th></th>
           </tr>
         </thead>
@@ -270,74 +275,57 @@ function renderResumenMensual() {
   const tbody = document.getElementById("tbody-mensual");
   if (!tbody) return;
 
-  const grupos = {};
-  asistenciasEmpleado.forEach(r => {
-    const key = r.hora.slice(0, 7);
-    if (!grupos[key]) grupos[key] = { dias: new Set(), ingresos: 0, salidas: 0, tieneRegistros: true };
-    grupos[key].dias.add(r.hora.slice(0, 10));
-    r.tipo === "ingreso" ? grupos[key].ingresos++ : grupos[key].salidas++;
-  });
-
-  // Agregar meses con planillas generadas (sin registros de asistencia)
-  const planillasGeneradas = JSON.parse(localStorage.getItem("planillas_generadas") || "[]");
-  const empleadoNombre = empleadoActual?.nombre || "";
-  
-  console.log("Empleado actual:", empleadoNombre);
-  console.log("Planillas generadas:", planillasGeneradas);
-  
-  planillasGeneradas
-    .filter(p => p.empleado === empleadoNombre)
-    .forEach(p => {
-      console.log("Agregando mes:", p.mes);
-      if (!(p.mes in grupos)) {
-        grupos[p.mes] = { dias: new Set(), ingresos: 0, salidas: 0, tieneRegistros: false };
-      }
-    });
-
-  // Filtrar planillas eliminadas
-  const planillasEliminadas = JSON.parse(localStorage.getItem("planillas_eliminadas") || "[]");
-  
-  let claves = Object.keys(grupos).sort().reverse();
+  // Solo mostrar meses que tienen planilla generada en Storage
+  let claves = [...planillasStorage].sort().reverse();
   if (filtroAnio) claves = claves.filter(k => k.startsWith(filtroAnio));
   if (filtroMes)  claves = claves.filter(k => k.endsWith(`-${String(filtroMes).padStart(2, "0")}`));
-  
-  // Excluir meses marcados como eliminados para este empleado
-  claves = claves.filter(k => {
-    return !planillasEliminadas.some(p => p.empleado === empleadoNombre && p.mes === k);
-  });
-
-  console.log("Claves finales:", claves);
 
   if (!claves.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Sin registros para el período seleccionado</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-muted)">Sin planillas generadas para el período seleccionado</td></tr>`;
     return;
   }
 
+  // Calcular estadísticas de asistencia para cada mes
+  const stats = {};
+  asistenciasEmpleado.forEach(r => {
+    const key = r.hora.slice(0, 7);
+    if (!stats[key]) stats[key] = { dias: new Set(), ingresos: 0, salidas: 0 };
+    stats[key].dias.add(r.hora.slice(0, 10));
+    r.tipo === "ingreso" ? stats[key].ingresos++ : stats[key].salidas++;
+  });
+
   tbody.innerHTML = claves.map(key => {
     const [anio, mesNum] = key.split("-");
-    const g = grupos[key];
+    const s = stats[key];
     const activo = key === mesSeleccionado ? ' class="mes-activo"' : "";
     const mesLabel = `${MESES[parseInt(mesNum)-1]} ${anio}`;
-    const diasText = g.tieneRegistros 
-      ? `${g.dias.size} día${g.dias.size !== 1 ? "s" : ""}`
-      : `<span style="color:var(--text-muted);font-size:12px">Planilla generada</span>`;
+    const diasText = s
+      ? `${s.dias.size} día${s.dias.size !== 1 ? "s" : ""}`
+      : `<span style="color:var(--text-muted);font-size:12px">Sin asistencias</span>`;
     return `
       <tr${activo} onclick="clickFilaMes('${key}')" style="cursor:pointer">
         <td class="nowrap"><strong>${mesLabel}</strong></td>
         <td>${diasText}</td>
-        <td class="tipo-ingreso">▲ ${g.ingresos}</td>
-        <td class="tipo-salida">▼ ${g.salidas}</td>
+        <td class="tipo-ingreso">▲ ${s ? s.ingresos : 0}</td>
+        <td class="tipo-salida">▼ ${s ? s.salidas : 0}</td>
+        <td style="text-align:center">
+          <button class="btn-ojo"
+            onclick="event.stopPropagation(); descargarDesdeHistorial('${key}')"
+            title="Descargar planilla de ${mesLabel}">
+            ⬇ Descargar
+          </button>
+        </td>
         <td style="text-align:center">
           <button class="btn-ojo"
             onclick="event.stopPropagation(); previsualizarPlanilla('${key}')"
             title="Previsualizar planilla de ${mesLabel}">
-            👁 Ver planilla
+            👁 Ver
           </button>
         </td>
         <td>
           <button class="btn-del"
             onclick="event.stopPropagation(); borrarMes('${key}', '${mesLabel}')"
-            title="Eliminar todos los registros de ${mesLabel}">
+            title="Eliminar planilla de ${mesLabel}">
             ✕
           </button>
         </td>
@@ -356,46 +344,25 @@ function clickFilaMes(key) {
 
 // ── Borrar mes ────────────────────────────────────────────
 async function borrarMes(key, mesLabel) {
-  if (!confirm(`¿Eliminar la planilla generada de ${mesLabel} de ${empleadoActual.nombre}?\n\nLos registros de asistencia se mantienen.`)) return;
+  if (!confirm(`¿Eliminar la planilla de ${mesLabel} de ${empleadoActual.nombre}?`)) return;
 
-  // Obtener el mes y año del key (formato: "YYYY-MM")
-  const [anio, mes] = key.split("-");
-  const mesNombre = MESES[parseInt(mes) - 1];
-  const patronBusca = `Planilla_${empleadoActual.nombre.replace(/\s+/g,"_")}_${mesNombre}_${anio}.xlsx`;
+  const [anio, mesNum] = key.split("-");
+  const fileName = `planilla_${sanitizarNombre(empleadoActual.nombre)}_${key}.xlsx`;
 
   try {
-    // Listar archivos en el bucket "planillas"
-    const { data: archivos, error: listaError } = await db.storage
-      .from("planillas")
-      .list();
+    // Actualizar el JSON de metadatos quitando este mes
+    const mesesActualizados = planillasStorage.filter(m => m !== key);
+    const metaErr = await guardarMetaEmpleado(empleadoActual.nombre, mesesActualizados);
+    if (metaErr) throw new Error(metaErr.message);
 
-    if (listaError) throw listaError;
+    // Intentar eliminar el archivo Excel de Storage (secundario)
+    db.storage.from("planillas").remove([fileName]);
 
-    // Encontrar y borrar archivos que coincidan
-    const archivosBorrar = archivos.filter(f => f.name.includes(patronBusca));
+    planillasStorage = mesesActualizados;
+    if (mesSeleccionado === key) mesSeleccionado = null;
 
-    for (const archivo of archivosBorrar) {
-      const { error: delError } = await db.storage
-        .from("planillas")
-        .remove([archivo.name]);
-
-      if (delError) throw delError;
-    }
-
-    // Marcar la planilla como eliminada en localStorage
-    const planillasEliminadas = JSON.parse(localStorage.getItem("planillas_eliminadas") || "[]");
-    if (!planillasEliminadas.some(p => p.empleado === empleadoActual.nombre && p.mes === key)) {
-      planillasEliminadas.push({ empleado: empleadoActual.nombre, mes: key });
-      localStorage.setItem("planillas_eliminadas", JSON.stringify(planillasEliminadas));
-    }
-
-    // Remover de planillas generadas
-    const planillasGeneradas = JSON.parse(localStorage.getItem("planillas_generadas") || "[]");
-    const nuevasPlanillas = planillasGeneradas.filter(p => !(p.empleado === empleadoActual.nombre && p.mes === key));
-    localStorage.setItem("planillas_generadas", JSON.stringify(nuevasPlanillas));
-
-    alert("✓ Planilla eliminada del historial. Los registros de asistencia se mantienen.");
-    renderPanelHistorial();
+    renderResumenMensual();
+    renderAsistenciaDiaria();
   } catch (e) {
     alert("Error al eliminar la planilla: " + e.message);
   }
@@ -483,7 +450,7 @@ async function buscarNombreAlternativo() {
   renderPanelHistorial();
 }
 
-// ── Descargar planilla (cualquier mes, sin preview) ───────
+// ── Guardar planilla en historial (sin descarga local) ────
 async function descargarPlanillaMes() {
   const mes    = parseInt(document.getElementById("gp-mes").value);
   const anio   = parseInt(document.getElementById("gp-anio").value);
@@ -507,6 +474,57 @@ async function descargarPlanillaMes() {
     const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anio);
     const blob    = await aplicarCambiosAPlantilla(ab, cambios);
 
+    // Subir a Storage para poder descargar/previsualizar desde el historial
+    const fileName = `planilla_${sanitizarNombre(emp.nombre)}_${anio}-${String(mes).padStart(2,"0")}.xlsx`;
+    await db.storage.from("planillas").upload(fileName, blob, {
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      upsert: true,
+    });
+
+    // Actualizar JSON de metadatos
+    const mesKey2 = `${anio}-${String(mes).padStart(2, "0")}`;
+    const mesesActualizados = planillasStorage.includes(mesKey2)
+      ? planillasStorage
+      : [...planillasStorage, mesKey2];
+    const metaErr = await guardarMetaEmpleado(emp.nombre, mesesActualizados);
+    if (metaErr) {
+      estado.textContent = `⚠ Error al guardar en historial: ${metaErr.message}`;
+      setTimeout(() => { estado.textContent = ""; }, 6000);
+      return;
+    }
+
+    planillasStorage = mesesActualizados;
+    renderResumenMensual();
+
+    estado.textContent = "✓ Guardada en historial";
+    setTimeout(() => { estado.textContent = ""; }, 3000);
+  } catch (err) {
+    estado.textContent = "⚠ " + err.message;
+  }
+}
+
+// ── Descargar planilla desde el historial ─────────────────
+async function descargarDesdeHistorial(key) {
+  const [anio, mesNum] = key.split("-");
+  const mes   = parseInt(mesNum);
+  const anioN = parseInt(anio);
+  const emp   = empleadoActual;
+
+  const desde = `${key}-01`;
+  const hasta = new Date(anioN, mes, 1).toISOString().slice(0, 10);
+  const registrosMes = asistenciasEmpleado.filter(r => {
+    const d = r.hora.slice(0, 10);
+    return d >= desde && d < hasta;
+  });
+
+  try {
+    const res = await fetch("public/planilla-horario.xlsx");
+    if (!res.ok) throw new Error("No se pudo cargar la plantilla");
+    const ab = await res.arrayBuffer();
+
+    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anioN);
+    const blob = await aplicarCambiosAPlantilla(ab, cambios);
+
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `Planilla_${emp.nombre.replace(/\s+/g,"_")}_${MESES[mes-1]}_${anio}.xlsx`;
@@ -514,13 +532,8 @@ async function descargarPlanillaMes() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
-
-    estado.textContent = registrosMes.length > 0
-      ? `✓ ${registrosMes.length} registros incluidos`
-      : "✓ Descargado (sin registros para ese mes)";
-    setTimeout(() => { estado.textContent = ""; }, 3000);
   } catch (err) {
-    estado.textContent = "⚠ " + err.message;
+    alert("⚠ Error al descargar: " + err.message);
   }
 }
 
@@ -584,6 +597,16 @@ async function previsualizarPlanilla(mesKey) {
         upsert: true,
       });
 
+    // Actualizar JSON de metadatos si no estaba ya registrado
+    if (!planillasStorage.includes(mesKey)) {
+      const mesesActualizados = [...planillasStorage, mesKey];
+      const metaErr2 = await guardarMetaEmpleado(emp.nombre, mesesActualizados);
+      if (!metaErr2) {
+        planillasStorage = mesesActualizados;
+        renderResumenMensual();
+      }
+    }
+
     if (uploadErr) {
       // La descarga ya está disponible; solo avisamos que la preview no pudo cargarse
       statusEl.textContent = "Vista previa no disponible — usá el botón de descarga";
@@ -592,9 +615,18 @@ async function previsualizarPlanilla(mesKey) {
       return;
     }
 
-    // Obtener URL pública y abrir en Office Online
-    const { data: { publicUrl } } = db.storage.from("planillas").getPublicUrl(fileName);
+    // Obtener URL firmada (única por cada llamada) para evitar caché de Office Online
+    const { data: signedData, error: signedErr } = await db.storage
+      .from("planillas")
+      .createSignedUrl(fileName, 3600);
+    if (signedErr) {
+      statusEl.textContent = "Vista previa no disponible — usá el botón de descarga";
+      statusEl.style.color = "var(--text-muted)";
+      setTimeout(() => { statusEl.style.display = "none"; }, 4000);
+      return;
+    }
     statusEl.textContent = "Abriendo previsualización…";
+    const publicUrl = signedData.signedUrl;
     const viewerUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(publicUrl)}`;
     iframe.src = viewerUrl;
 
@@ -625,9 +657,8 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[M.contratista] = contratista.toUpperCase();
   cambios[M.mesAnio]     = `${MESES[mes - 1]}-${String(anio).slice(2)}`;
 
-  // Pre-inicializar todas las filas con "RIVERAS DEL SUQUIA" como encargado en negrita
   for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
-    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
+    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", smallStyle: true };
   }
 
   const byDate = {};
@@ -641,9 +672,23 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   let fila = M.dataStartRow;
 
   for (let d = 1; d <= diasDelMes && fila <= M.dataEndRow; d++) {
-    const fechaKey = `${anio}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const inicial  = DIAS_INI[new Date(anio, mes - 1, d).getDay()];
-    const diaLabel = `${inicial} ${d}`;
+    const fechaKey  = `${anio}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const diaSemana = new Date(anio, mes - 1, d).getDay();
+    const inicial   = DIAS_INI[diaSemana];
+    const diaLabel  = `${inicial} ${d}`;
+
+    if (diaSemana === 0) {
+      cambios[`A${fila}`] = { v: diaLabel, sundayCol: "A" };
+      cambios[`B${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`C${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`D${fila}`] = { v: "", sundayCol: "D" };
+      cambios[`E${fila}`] = { v: "", sundayCol: "E" };
+      cambios[`F${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`G${fila}`] = { v: "", sundayCol: "BCFG" };
+      fila++;
+      continue;
+    }
+
     const { ingresos = [], salidas = [] } = byDate[fechaKey] || {};
     const maxF = Math.max(ingresos.length, salidas.length, 1);
 
@@ -654,7 +699,6 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
       cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
-      cambios[`${M.colEncargado}${fila}`] = { v: "RIVERAS DEL SUQUIA", bold: true, size: 14 };
       fila++;
     }
   }
@@ -664,56 +708,38 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
     cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
     cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
-    // El Encargado "RIVERAS DEL SUQUIA" ya está pre-asignado, se mantiene
   }
 
-  // ── Resumen de horas (desde fila 40, aprox. B43 en la planilla) ──
+  // ── Resumen de horas — solo total mensual ──
   const RES_INI = 40;
-  cambios[`A${RES_INI}`]   = `RESUMEN HORAS TRABAJADAS — ${MESES[mes-1].toUpperCase()} ${anio}`;
-  cambios[`A${RES_INI+1}`] = "DIA";
-  cambios[`B${RES_INI+1}`] = "ENTRADA";
-  cambios[`C${RES_INI+1}`] = "SALIDA";
-  cambios[`D${RES_INI+1}`] = "HORAS";
-
-  let filaR    = RES_INI + 2;
   let totalMin = 0;
-
-  Object.keys(byDate).sort().forEach(fechaKey => {
+  Object.keys(byDate).forEach(fechaKey => {
     const { ingresos, salidas } = byDate[fechaKey];
-    const fecha    = new Date(fechaKey + "T12:00:00");
-    const diaLabel = `${DIAS_INI[fecha.getDay()]} ${fecha.getDate()}`;
-    let minDia     = 0;
-    const pares    = Math.min(ingresos.length, salidas.length);
+    const pares = Math.min(ingresos.length, salidas.length);
     for (let i = 0; i < pares; i++) {
       const t1 = new Date(ingresos[i].hora);
       const t2 = new Date(salidas[i].hora);
-      if (t2 > t1) minDia += (t2 - t1) / 60000;
+      if (t2 > t1) totalMin += (t2 - t1) / 60000;
     }
-    const primerIngreso = ingresos[0]
-      ? new Date(ingresos[0].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
-    const ultimaSalida  = salidas[salidas.length - 1]
-      ? new Date(salidas[salidas.length - 1].hora).toLocaleTimeString("es-AR", { hour12: false }) : "—";
-    const horasDia = minDia > 0
-      ? `${Math.floor(minDia / 60)}h ${String(Math.round(minDia % 60)).padStart(2, "0")}m`
-      : (ingresos.length > 0 ? "Incompleto" : "—");
-    cambios[`A${filaR}`] = diaLabel;
-    cambios[`B${filaR}`] = primerIngreso;
-    cambios[`C${filaR}`] = ultimaSalida;
-    cambios[`D${filaR}`] = horasDia;
-    totalMin += minDia;
-    filaR++;
   });
-
-  cambios[`A${filaR}`] = "TOTAL HORAS DEL MES:";
-  cambios[`D${filaR}`] = `${Math.floor(totalMin / 60)}h ${String(Math.round(totalMin % 60)).padStart(2, "0")}m`;
+  const totalStr = `${Math.floor(totalMin / 60)}h ${String(Math.round(totalMin % 60)).padStart(2, "0")}m`;
+  cambios[`A${RES_INI}`]   = `RESUMEN HORAS TRABAJADAS — ${MESES[mes-1].toUpperCase()} ${anio}`;
+  cambios[`A${RES_INI+1}`] = "TOTAL HORAS DEL MES:";
+  cambios[`B${RES_INI+1}`] = totalStr;
 
   return cambios;
 }
 
 async function aplicarCambiosAPlantilla(ab, cambios) {
   const zip = await JSZip.loadAsync(ab);
+
+  let stylesXml = await zip.file("xl/styles.xml").async("string");
+  const { xml: stylesXml2, idx: smallStyleIdx } = agregarEstiloLetraChica(stylesXml);
+  const { xml: newStylesXml, sundayStyles }      = agregarEstilosDomingo(stylesXml2);
+  zip.file("xl/styles.xml", newStylesXml);
+
   let sheetXml = await zip.file("xl/worksheets/sheet1.xml").async("string");
-  sheetXml = modificarCeldasXml(sheetXml, cambios);
+  sheetXml = modificarCeldasXml(sheetXml, cambios, smallStyleIdx, sundayStyles);
   zip.file("xl/worksheets/sheet1.xml", sheetXml);
   return zip.generateAsync({
     type: "blob",
@@ -721,7 +747,85 @@ async function aplicarCambiosAPlantilla(ab, cambios) {
   });
 }
 
-function modificarCeldasXml(xml, cambios) {
+function agregarEstiloLetraChica(stylesXml) {
+  const NS  = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const doc = new DOMParser().parseFromString(stylesXml, "application/xml");
+
+  // Agregar fuente: bold, 8pt, Calibri
+  const fontsEl    = doc.getElementsByTagNameNS(NS, "fonts")[0];
+  const newFontIdx = parseInt(fontsEl.getAttribute("count"));
+  const font = doc.createElementNS(NS, "font");
+  font.appendChild(doc.createElementNS(NS, "b"));
+  const sz = doc.createElementNS(NS, "sz");   sz.setAttribute("val", "10");      font.appendChild(sz);
+  const nm = doc.createElementNS(NS, "name"); nm.setAttribute("val", "Calibri"); font.appendChild(nm);
+  const fm = doc.createElementNS(NS, "family"); fm.setAttribute("val", "2");     font.appendChild(fm);
+  fontsEl.appendChild(font);
+  fontsEl.setAttribute("count", String(newFontIdx + 1));
+
+  // Agregar xf: mismos bordes que s=2 pero con la nueva fuente
+  const cellXfsEl = doc.getElementsByTagNameNS(NS, "cellXfs")[0];
+  const newXfIdx  = parseInt(cellXfsEl.getAttribute("count"));
+  const xf = doc.createElementNS(NS, "xf");
+  xf.setAttribute("numFmtId", "0");
+  xf.setAttribute("fontId",   String(newFontIdx));
+  xf.setAttribute("fillId",   "0");
+  xf.setAttribute("borderId", "1");
+  xf.setAttribute("xfId",     "0");
+  xf.setAttribute("applyFont",      "1");
+  xf.setAttribute("applyFill",      "1");
+  xf.setAttribute("applyBorder",    "1");
+  xf.setAttribute("applyAlignment", "1");
+  const align = doc.createElementNS(NS, "alignment");
+  align.setAttribute("horizontal", "center");
+  align.setAttribute("vertical",   "center");
+  align.setAttribute("wrapText",    "1");
+  xf.appendChild(align);
+  cellXfsEl.appendChild(xf);
+  cellXfsEl.setAttribute("count", String(newXfIdx + 1));
+
+  return { xml: new XMLSerializer().serializeToString(doc), idx: newXfIdx };
+}
+
+function agregarEstilosDomingo(stylesXml) {
+  const NS  = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+  const doc = new DOMParser().parseFromString(stylesXml, "application/xml");
+
+  const cellXfsEl = doc.getElementsByTagNameNS(NS, "cellXfs")[0];
+  const baseIdx   = parseInt(cellXfsEl.getAttribute("count"));
+
+  function makeXf(fontId, borderId, alignV) {
+    const xf = doc.createElementNS(NS, "xf");
+    xf.setAttribute("numFmtId", "0");
+    xf.setAttribute("fontId",   String(fontId));
+    xf.setAttribute("fillId",   "3");
+    xf.setAttribute("borderId", String(borderId));
+    xf.setAttribute("xfId",     "0");
+    xf.setAttribute("applyFont",      "1");
+    xf.setAttribute("applyFill",      "1");
+    xf.setAttribute("applyBorder",    "1");
+    xf.setAttribute("applyAlignment", "1");
+    const align = doc.createElementNS(NS, "alignment");
+    align.setAttribute("horizontal", "left");
+    align.setAttribute("vertical",   alignV);
+    align.setAttribute("wrapText",    "1");
+    xf.appendChild(align);
+    cellXfsEl.appendChild(xf);
+  }
+
+  makeXf(2, 1, "top");    // col A    (baseIdx + 0)
+  makeXf(0, 1, "center"); // col B,C,F,G (baseIdx + 1)
+  makeXf(0, 2, "center"); // col D    (baseIdx + 2)
+  makeXf(0, 4, "center"); // col E    (baseIdx + 3)
+
+  cellXfsEl.setAttribute("count", String(baseIdx + 4));
+
+  return {
+    xml: new XMLSerializer().serializeToString(doc),
+    sundayStyles: { A: baseIdx, BCFG: baseIdx + 1, D: baseIdx + 2, E: baseIdx + 3 },
+  };
+}
+
+function modificarCeldasXml(xml, cambios, smallStyleIdx, sundayStyles) {
   const NS        = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
   const doc       = new DOMParser().parseFromString(xml, "application/xml");
   const sheetData = doc.getElementsByTagNameNS(NS, "sheetData")[0];
@@ -741,7 +845,18 @@ function modificarCeldasXml(xml, cambios) {
     cell.setAttribute("t", "inlineStr");
 
     const is = doc.createElementNS(NS, "is");
-    if (esObj && (entrada.bold || entrada.size)) {
+
+    if (esObj && entrada.sundayCol && sundayStyles) {
+      cell.setAttribute("s", String(sundayStyles[entrada.sundayCol] ?? sundayStyles.BCFG));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && entrada.smallStyle && smallStyleIdx != null) {
+      cell.setAttribute("s", String(smallStyleIdx));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && (entrada.bold || entrada.size)) {
       const r   = doc.createElementNS(NS, "r");
       const rPr = doc.createElementNS(NS, "rPr");
       if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
@@ -749,6 +864,9 @@ function modificarCeldasXml(xml, cambios) {
         const sz = doc.createElementNS(NS, "sz");
         sz.setAttribute("val", String(entrada.size));
         rPr.appendChild(sz);
+        const szCs = doc.createElementNS(NS, "szCs");
+        szCs.setAttribute("val", String(entrada.size));
+        rPr.appendChild(szCs);
       }
       r.appendChild(rPr);
       const t = doc.createElementNS(NS, "t");
@@ -790,7 +908,17 @@ function modificarCeldasXml(xml, cambios) {
     cellEl.setAttribute("t", "inlineStr");
 
     const is = doc.createElementNS(NS, "is");
-    if (esObj && (entrada.bold || entrada.size)) {
+    if (esObj && entrada.sundayCol && sundayStyles) {
+      cellEl.setAttribute("s", String(sundayStyles[entrada.sundayCol] ?? sundayStyles.BCFG));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && entrada.smallStyle && smallStyleIdx != null) {
+      cellEl.setAttribute("s", String(smallStyleIdx));
+      const t = doc.createElementNS(NS, "t");
+      t.textContent = valor;
+      is.appendChild(t);
+    } else if (esObj && (entrada.bold || entrada.size)) {
       const rEl  = doc.createElementNS(NS, "r");
       const rPr  = doc.createElementNS(NS, "rPr");
       if (entrada.bold) rPr.appendChild(doc.createElementNS(NS, "b"));
@@ -798,6 +926,9 @@ function modificarCeldasXml(xml, cambios) {
         const sz = doc.createElementNS(NS, "sz");
         sz.setAttribute("val", String(entrada.size));
         rPr.appendChild(sz);
+        const szCs = doc.createElementNS(NS, "szCs");
+        szCs.setAttribute("val", String(entrada.size));
+        rPr.appendChild(szCs);
       }
       rEl.appendChild(rPr);
       const t = doc.createElementNS(NS, "t");
@@ -814,6 +945,29 @@ function modificarCeldasXml(xml, cambios) {
   }
 
   return new XMLSerializer().serializeToString(doc);
+}
+
+// ── Metadata de planillas en Storage (JSON por empleado) ─
+function metaFileName(nombreEmpleado) {
+  return `meta_${sanitizarNombre(nombreEmpleado)}.json`;
+}
+
+async function cargarMetaEmpleado(nombreEmpleado) {
+  try {
+    const { data: { publicUrl } } = db.storage.from("planillas").getPublicUrl(metaFileName(nombreEmpleado));
+    const res = await fetch(`${publicUrl}?t=${Date.now()}`);
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+async function guardarMetaEmpleado(nombreEmpleado, meses) {
+  const blob = new Blob([JSON.stringify(meses)], { type: "application/json" });
+  const { error } = await db.storage.from("planillas")
+    .upload(metaFileName(nombreEmpleado), blob, { upsert: true });
+  return error;
 }
 
 // ── Helpers ───────────────────────────────────────────────
