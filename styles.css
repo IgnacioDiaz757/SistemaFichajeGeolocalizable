@@ -355,7 +355,7 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
   gap: 16px;
 }
 
-/* En desktop, centrar y limitar ancho de la cámara */
+/* En tablet y desktop, centrar y limitar ancho de la cámara */
 @media (min-width: 768px) {
   #camara-modal {
     align-items: center;
@@ -385,6 +385,13 @@ select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 480px) {
+  .btn-camara-cancel {
+    font-size: 12px;
+    padding: 8px 16px;
+  }
 }
 
 /* Botón capturar — estilo doble anillo nativo */
@@ -519,6 +526,213 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
   .card { padding: 24px 16px 22px; }
   .hora-valor { font-size: 19px; }
   button { font-size: 14px; padding: 15px 8px; }
+}
+
+/* ── Media Queries Responsive ──────────────────────────── */
+
+/* Móvil pequeño (< 360px) */
+@media (max-width: 359px) {
+  body { padding: 16px 12px; }
+  .card { 
+    padding: 20px 12px 16px;
+    border-radius: 16px;
+    max-width: 100%;
+  }
+  .logo { max-width: 120px; }
+  .titulo { font-size: 13px; margin-bottom: 20px; }
+  .campo { margin-bottom: 12px; }
+  label { font-size: 10px; margin-bottom: 4px; }
+  input[type="text"], select { 
+    padding: 11px 12px;
+    font-size: 15px;
+  }
+  .foto-placeholder .icono { font-size: 28px; }
+  .foto-placeholder span { font-size: 12px; }
+  .btn-admin, .btn-tema { 
+    top: 12px;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .hora-box { 
+    padding: 10px 12px;
+    margin-bottom: 16px;
+  }
+  .hora-valor { font-size: 18px; }
+  button { 
+    font-size: 13px;
+    padding: 13px 8px;
+  }
+  .gps-card {
+    padding: 24px 16px 20px;
+    border-radius: 16px;
+  }
+}
+
+/* Móvil estándar (360px - 640px) */
+@media (min-width: 360px) and (max-width: 639px) {
+  body { padding: 20px 16px; }
+  .card { 
+    padding: 28px 20px 24px;
+    max-width: 100%;
+  }
+  .logo { max-width: 140px; }
+  input[type="text"], select { font-size: 16px; }
+  #foto-preview { max-height: 180px; }
+}
+
+/* Tablet (640px - 1024px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  body { padding: 32px 24px; }
+  .card { 
+    padding: 40px 32px 36px;
+    max-width: 540px;
+  }
+  .logo { max-width: 180px; }
+  .titulo { 
+    font-size: 16px;
+    margin-bottom: 32px;
+  }
+  .campo { margin-bottom: 20px; }
+  input[type="text"], select { 
+    padding: 15px 16px;
+    font-size: 16px;
+  }
+  #foto-preview { max-height: 260px; }
+  .foto-placeholder { padding: 40px 24px; }
+  .foto-placeholder .icono { font-size: 40px; }
+  .foto-placeholder span { font-size: 15px; }
+  .hora-box { padding: 16px 20px; }
+  .hora-valor { font-size: 26px; }
+  button { 
+    padding: 18px 12px;
+    font-size: 16px;
+  }
+  .btn-admin, .btn-tema { 
+    top: 20px;
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  .gps-card {
+    padding: 40px 32px 32px;
+    max-width: 420px;
+  }
+}
+
+/* Desktop (> 1024px) */
+@media (min-width: 1024px) {
+  body { 
+    padding: 40px 32px;
+    min-height: 100vh;
+  }
+  .card { 
+    padding: 48px 40px 44px;
+    max-width: 520px;
+  }
+  .logo { 
+    max-width: 200px;
+    margin-bottom: 12px;
+  }
+  .titulo { 
+    font-size: 17px;
+    margin-bottom: 36px;
+  }
+  .campo { margin-bottom: 24px; }
+  label { 
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+  input[type="text"], select { 
+    padding: 16px 18px;
+    font-size: 16px;
+    border-radius: 12px;
+  }
+  input[type="text"]:focus { 
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 3px rgba(26,26,46,0.1);
+  }
+  select:focus { 
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 3px rgba(26,26,46,0.1);
+  }
+  .foto-area {
+    border-radius: 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .foto-area:hover { 
+    border-color: #1a1a2e;
+    box-shadow: 0 0 0 3px rgba(26,26,46,0.05);
+  }
+  #foto-preview { max-height: 300px; }
+  .foto-placeholder { 
+    padding: 48px 32px;
+    gap: 8px;
+  }
+  .foto-placeholder .icono { font-size: 48px; }
+  .foto-placeholder span { 
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .hora-box { 
+    padding: 18px 24px;
+    margin-bottom: 32px;
+    border-radius: 12px;
+  }
+  .hora-label { font-size: 13px; }
+  .hora-valor { 
+    font-size: 28px;
+    font-weight: 700;
+  }
+  button { 
+    padding: 18px 16px;
+    font-size: 16px;
+    border-radius: 14px;
+    transition: transform 0.15s, filter 0.15s;
+  }
+  button:hover:not(:disabled) { 
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+  }
+  button:active:not(:disabled) { 
+    transform: translateY(0) scale(0.98);
+  }
+  #mensaje { 
+    font-size: 15px;
+    margin-top: 20px;
+  }
+  .btn-admin, .btn-tema { 
+    top: 24px;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+    box-shadow: 0 2px 12px var(--btn-float-shadow);
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .btn-admin:hover, .btn-tema:hover {
+    box-shadow: 0 4px 16px var(--btn-float-shadow);
+  }
+  .gps-card {
+    padding: 44px 40px 36px;
+    max-width: 460px;
+    border-radius: 24px;
+  }
+  .gps-icono { font-size: 56px; }
+  .gps-titulo { font-size: 22px; }
+  .gps-texto { 
+    font-size: 15px;
+    margin-bottom: 28px;
+  }
+  .gps-btn-permitir { 
+    padding: 16px;
+    font-size: 16px;
+  }
+  .gps-pasos {
+    text-align: left;
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
 }
 
 /* ── Modal permiso GPS ───────────────────────────────────── */

@@ -147,10 +147,226 @@
     .btn-del{background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:6px;padding:3px 9px;font-size:13px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
     .btn-del:hover{background:var(--danger-lt);border-color:#ef9a9a;color:#c62828;}
 
-    /* ── Responsive ── */
-    @media(max-width:700px){
-      .panel-personas{display:none;}
-      .brand-sub{display:none;}
+    /* ── Media Queries Responsive ──────────────────────– */
+
+    /* Móvil pequeño (< 360px) */
+    @media (max-width: 359px) {
+      header { 
+        padding: 10px 12px; 
+        height: 50px;
+        gap: 8px;
+      }
+      .brand-name { font-size: 14px; }
+      .brand-sub { display: none; }
+      .header-actions { gap: 4px; }
+      .btn { 
+        padding: 6px 10px; 
+        font-size: 11px; 
+      }
+
+      .layout { height: calc(100vh - 50px); }
+      .panel-personas { display: none; }
+      .panel-historial { padding: 12px; }
+
+      .persona-header-panel { 
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 14px;
+      }
+      .persona-avatar { width: 40px; height: 40px; font-size: 16px; }
+      .persona-datos h2 { font-size: 16px; }
+
+      .tabla-wrap { font-size: 12px; }
+      thead th { padding: 8px 10px; font-size: 11px; }
+      tbody td { padding: 8px 10px; font-size: 12px; }
+      .foto-thumb { width: 32px; height: 32px; }
+    }
+
+    /* Móvil estándar (360px - 640px) */
+    @media (min-width: 360px) and (max-width: 639px) {
+      header { 
+        padding: 12px 14px;
+        height: 54px;
+      }
+      .brand-sub { display: none; }
+      
+      .layout { height: calc(100vh - 54px); }
+      .panel-personas { display: none; }
+      .panel-historial { padding: 14px; }
+
+      .persona-header-panel { 
+        padding: 14px 16px;
+        gap: 12px;
+      }
+
+      .tabla-wrap { 
+        overflow-x: auto;
+        font-size: 12px;
+      }
+      thead th { padding: 9px 11px; }
+      tbody td { padding: 9px 11px; }
+      .foto-thumb { width: 36px; height: 36px; }
+    }
+
+    /* Tablet (640px - 1024px) */
+    @media (min-width: 640px) and (max-width: 1023px) {
+      header { 
+        padding: 13px 18px;
+        height: 58px;
+      }
+      .brand-name { font-size: 16px; }
+      .brand-sub { display: block; }
+      .btn { 
+        padding: 8px 14px;
+        font-size: 13px;
+      }
+
+      .layout { height: calc(100vh - 58px); }
+      .panel-personas { 
+        width: 260px;
+        display: flex;
+      }
+      .panel-historial { padding: 18px; }
+
+      .persona-header-panel { 
+        padding: 16px 18px;
+        gap: 14px;
+      }
+      .persona-avatar { width: 48px; height: 48px; font-size: 20px; }
+
+      .tabla-wrap { font-size: 13px; }
+      thead th { padding: 10px 12px; font-size: 12px; }
+      tbody td { padding: 10px 12px; }
+    }
+
+    /* Desktop (> 1024px) */
+    @media (min-width: 1024px) {
+      header { 
+        padding: 14px 24px;
+        height: 60px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .header-brand { gap: 12px; }
+      .brand-name { font-size: 16px; font-weight: 700; }
+      .brand-sub { display: block; }
+      .btn { 
+        padding: 8px 16px;
+        font-size: 13px;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .btn:hover { 
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      }
+
+      .layout { height: calc(100vh - 60px); }
+      .panel-personas { 
+        width: 320px;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+        border-right: none;
+      }
+      .sidebar-header {
+        padding: 16px 16px 12px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+      }
+      .persona-card {
+        padding: 12px 14px;
+        transition: all 0.2s;
+      }
+      .persona-card:hover {
+        background: var(--row-hover);
+        border-left-color: var(--blue);
+      }
+
+      .panel-historial { 
+        padding: 24px;
+        overflow-y: auto;
+      }
+
+      .persona-header-panel { 
+        padding: 18px 20px;
+        gap: 16px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 20px;
+      }
+      .persona-avatar { 
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+      }
+      .persona-datos h2 { 
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .persona-tags { gap: 8px; }
+      .tag { padding: 4px 12px; font-size: 12px; }
+      .persona-stats { gap: 24px; }
+      .mini-num { font-size: 24px; }
+      .mini-label { font-size: 11px; }
+
+      .filtros-tiempo {
+        padding: 14px 18px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      .filtros-tiempo-row select {
+        padding: 9px 12px;
+        font-size: 14px;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .filtros-tiempo-row select:hover {
+        border-color: var(--blue);
+      }
+
+      .seccion-titulo { 
+        font-size: 14px;
+        margin-bottom: 12px;
+        margin-top: 6px;
+      }
+
+      .tabla-wrap { 
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 24px;
+      }
+      .tabla-wrap table { font-size: 14px; }
+      thead th { 
+        padding: 12px 14px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      tbody tr:hover { background: var(--row-hover); }
+      tbody td { 
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+
+      .foto-thumb { 
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .foto-thumb:hover { 
+        opacity: 0.8;
+        transform: scale(1.08);
+      }
+
+      .btn-ojo {
+        padding: 6px 12px;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .btn-ojo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
     }
   </style>
 </head>

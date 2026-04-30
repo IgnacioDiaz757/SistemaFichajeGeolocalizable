@@ -140,6 +140,402 @@
       color: #fff; border-radius: 50px; padding: 10px 20px;
       font-size: 14px; font-weight: 600; cursor: pointer;
     }
+
+    /* ── Media Queries Responsive ──────────────────────– */
+
+    /* Móvil pequeño (< 360px) */
+    @media (max-width: 359px) {
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+      
+      header {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      header h1 { font-size: 15px; }
+      .btn { 
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      .contenido { 
+        max-width: 100%;
+        padding: 12px 10px;
+      }
+
+      .seccion {
+        padding: 14px 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+      }
+      .seccion h2 { 
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+
+      .fila-input {
+        flex-direction: column;
+        gap: 10px;
+      }
+      .fila-input > div {
+        width: 100% !important;
+        min-width: unset !important;
+      }
+      .fila-input input, 
+      .fila-input select {
+        width: 100%;
+        font-size: 13px;
+        padding: 8px 10px;
+        border-radius: 6px;
+      }
+
+      .empleado-item {
+        padding: 9px 0;
+        font-size: 12px;
+      }
+      .btn-del {
+        padding: 3px 8px;
+        font-size: 11px;
+      }
+
+      #reg-video {
+        width: 100%;
+      }
+      .camara-bar {
+        padding: 12px 16px 24px;
+        gap: 10px;
+      }
+      .btn-capturar {
+        width: 64px;
+        height: 64px;
+      }
+      .btn-cancelar-cam {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+
+      #indicador { font-size: 12px; }
+    }
+
+    /* Móvil estándar (360px - 640px) */
+    @media (min-width: 360px) and (max-width: 639px) {
+      header {
+        padding: 12px 16px;
+        gap: 10px;
+      }
+      header h1 { font-size: 16px; }
+      
+      .contenido { 
+        padding: 14px 12px;
+      }
+
+      .seccion {
+        padding: 16px 14px;
+        margin-bottom: 14px;
+      }
+      .seccion h2 { font-size: 14px; }
+
+      .fila-input {
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .fila-input input,
+      .fila-input select {
+        font-size: 14px;
+        padding: 9px 11px;
+      }
+
+      .empleado-item {
+        padding: 10px 0;
+        font-size: 13px;
+      }
+    }
+
+    /* Tablet (640px - 1024px) */
+    @media (min-width: 640px) and (max-width: 1023px) {
+      header {
+        padding: 13px 18px;
+        justify-content: space-between;
+      }
+      header h1 { font-size: 17px; }
+      
+      .contenido { 
+        max-width: 900px;
+        padding: 18px 16px;
+      }
+
+      .seccion {
+        padding: 18px 18px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      }
+      .seccion h2 { 
+        font-size: 15px;
+        margin-bottom: 16px;
+        font-weight: 600;
+      }
+
+      .fila-input {
+        gap: 12px;
+        align-items: flex-end;
+      }
+      .fila-input > div {
+        flex: 1;
+        min-width: 160px;
+      }
+      .fila-input label {
+        font-size: 12px;
+        margin-bottom: 6px;
+        display: block;
+      }
+      .fila-input input,
+      .fila-input select {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .fila-input .btn {
+        align-self: flex-end;
+        padding: 10px 18px;
+        font-size: 14px;
+      }
+
+      #estado { font-size: 14px; }
+
+      .empleado-item {
+        padding: 11px 0;
+        font-size: 14px;
+      }
+      .btn-del {
+        padding: 5px 10px;
+        font-size: 12px;
+      }
+
+      #reg-video {
+        max-width: 720px;
+        border-radius: 10px 10px 0 0;
+      }
+      .camara-bar {
+        max-width: 720px;
+        border-radius: 0 0 10px 10px;
+        padding: 16px 40px 24px;
+      }
+    }
+
+    /* Desktop (> 1024px) */
+    @media (min-width: 1024px) {
+      body { 
+        font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+        background: #f5f5f5;
+      }
+
+      header {
+        padding: 14px 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      header h1 { 
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .btn { 
+        padding: 9px 18px;
+        font-size: 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .contenido { 
+        max-width: 1000px;
+        padding: 24px 24px 40px;
+      }
+
+      .seccion {
+        background: var(--surface);
+        border-radius: 12px;
+        padding: 24px 26px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: box-shadow 0.2s;
+      }
+      .seccion:hover {
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      }
+      .seccion h2 { 
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 18px;
+        color: var(--text);
+      }
+
+      .fila-input {
+        display: flex;
+        gap: 14px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .fila-input > div {
+        flex: 1;
+        min-width: 200px;
+      }
+      .fila-input label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: var(--text-label);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .fila-input input,
+      .fila-input select {
+        width: 100%;
+        padding: 11px 13px;
+        font-size: 15px;
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        background: var(--input-bg);
+        color: var(--text);
+        transition: all 0.2s;
+      }
+      .fila-input input:hover,
+      .fila-input select:hover {
+        border-color: #1565c0;
+      }
+      .fila-input input:focus,
+      .fila-input select:focus {
+        outline: none;
+        border-color: #1565c0;
+        box-shadow: 0 0 0 3px rgba(21,101,192,0.1);
+      }
+      .fila-input .btn {
+        align-self: flex-end;
+        padding: 11px 20px;
+      }
+
+      #estado { 
+        font-size: 15px;
+        margin-top: 12px;
+      }
+
+      .empleado-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 13px 0;
+        border-bottom: 1px solid var(--border-lt);
+        font-size: 15px;
+        transition: background 0.15s;
+      }
+      .empleado-item:hover {
+        background: rgba(0,0,0,0.02);
+      }
+      .empleado-item:last-child { border-bottom: none; }
+
+      .empleado-nombre { 
+        font-weight: 600;
+        flex: 1;
+      }
+
+      .btn-del {
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text-muted);
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .btn-del:hover {
+        background: #ffebee;
+        border-color: #ef9a9a;
+        color: #c62828;
+        transform: translateY(-1px);
+      }
+
+      /* Modal cámara mejorado */
+      #camara-modal {
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.95);
+      }
+      #reg-video {
+        max-width: 720px;
+        max-height: calc(100vh - 200px);
+        border-radius: 12px 12px 0 0;
+      }
+      #reg-canvas { display: none; }
+
+      .camara-bar {
+        width: 100%;
+        max-width: 720px;
+        border-radius: 0 0 12px 12px;
+        padding: 18px 48px 28px;
+        background: rgba(0,0,0,0.98);
+        gap: 16px;
+      }
+
+      .dots {
+        gap: 12px;
+        justify-content: center;
+      }
+      .dot {
+        width: 14px;
+        height: 14px;
+      }
+      .dot-ok { background: #4caf50; }
+
+      #indicador { 
+        font-size: 14px;
+        color: rgba(255,255,255,0.85);
+      }
+
+      .camara-acciones {
+        gap: 24px;
+      }
+
+      .btn-capturar {
+        width: 76px;
+        height: 76px;
+        border: 5px solid transparent;
+        box-shadow: 0 0 0 4px rgba(255,255,255,0.9);
+        transition: all 0.2s;
+      }
+      .btn-capturar:hover:not(:disabled) {
+        box-shadow: 0 0 0 4px rgba(255,255,255,1);
+        transform: scale(1.05);
+      }
+      .btn-capturar:active:not(:disabled) { 
+        transform: scale(0.92);
+      }
+
+      .btn-cancelar-cam {
+        padding: 11px 24px;
+        font-size: 15px;
+        border-width: 2px;
+        transition: all 0.2s;
+      }
+      .btn-cancelar-cam:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.6);
+      }
+    }
   </style>
 </head>
 <body>

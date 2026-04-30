@@ -137,6 +137,422 @@
       color: #888; font-size: 16px;
     }
 
+    /* ── Media Queries Responsive ──────────────────────── */
+
+    /* Móvil pequeño (< 360px) */
+    @media (max-width: 359px) {
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; }
+      
+      header {
+        padding: 10px 12px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      header h1 { font-size: 16px; }
+      .header-sub { font-size: 10px; }
+      .btn { 
+        padding: 6px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+      }
+
+      .contenido { 
+        max-width: 100%;
+        padding: 12px 10px;
+      }
+
+      .resumen { 
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-direction: column;
+      }
+      .card-stat { 
+        min-width: unset;
+        flex: 1;
+        padding: 10px 12px;
+        border-radius: 8px;
+      }
+      .card-stat .numero { font-size: 24px; }
+      .card-stat .label { font-size: 11px; }
+
+      .filtros {
+        padding: 10px 12px;
+        gap: 8px;
+        margin-bottom: 12px;
+        border-radius: 8px;
+      }
+      .filtros label { font-size: 11px; margin-bottom: 2px; }
+      .filtros input { 
+        padding: 6px 8px;
+        font-size: 12px;
+        width: 100%;
+        border-radius: 6px;
+      }
+
+      .lista-titulo { 
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+
+      .empleado-bloque { 
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+      .empleado-header { 
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      .empleado-header .badge { 
+        padding: 2px 8px;
+        font-size: 11px;
+      }
+
+      .registro-fila { 
+        gap: 6px;
+        padding: 7px 12px;
+        font-size: 12px;
+      }
+      .foto-thumb, .foto-none { 
+        width: 40px;
+        height: 40px;
+      }
+
+      #lightbox img { 
+        max-width: 96vw;
+        max-height: 92vh;
+      }
+    }
+
+    /* Móvil estándar (360px - 640px) */
+    @media (min-width: 360px) and (max-width: 639px) {
+      header {
+        padding: 12px 16px;
+        gap: 10px;
+      }
+      header h1 { font-size: 17px; }
+      
+      .contenido { 
+        padding: 14px 12px;
+      }
+
+      .resumen { 
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .card-stat { 
+        flex: 1;
+        min-width: 80px;
+        padding: 12px 14px;
+      }
+      .card-stat .numero { font-size: 26px; }
+
+      .filtros {
+        padding: 12px 14px;
+        gap: 10px;
+      }
+      .filtros input { 
+        width: 100%;
+      }
+
+      .registro-fila { 
+        gap: 8px;
+        padding: 8px 14px;
+      }
+      .foto-thumb, .foto-none { 
+        width: 46px;
+        height: 46px;
+      }
+    }
+
+    /* Tablet (640px - 1024px) */
+    @media (min-width: 640px) and (max-width: 1023px) {
+      header {
+        padding: 14px 18px;
+        justify-content: space-between;
+      }
+      header h1 { font-size: 18px; }
+      .header-sub { 
+        font-size: 11px;
+        display: block;
+      }
+      
+      .contenido { 
+        max-width: 100%;
+        padding: 16px 18px;
+      }
+
+      .resumen { 
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .card-stat { 
+        flex: 1;
+        padding: 16px 18px;
+        border-radius: 10px;
+        text-align: center;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .card-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .card-stat .numero { font-size: 32px; }
+      .card-stat .label { 
+        font-size: 13px;
+        margin-top: 4px;
+      }
+
+      .filtros {
+        padding: 14px 16px;
+        gap: 12px;
+        margin-bottom: 18px;
+        border-radius: 10px;
+        align-items: center;
+      }
+      .filtros label { 
+        font-size: 12px;
+        margin-bottom: 4px;
+        display: block;
+      }
+      .filtros input { 
+        width: 200px;
+        padding: 8px 11px;
+        font-size: 13px;
+        border: 1px solid #d0d0d0;
+        border-radius: 7px;
+      }
+
+      .lista-titulo { 
+        font-size: 15px;
+        margin-bottom: 14px;
+      }
+
+      .empleado-bloque { 
+        border-radius: 10px;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      .empleado-header { 
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .empleado-header .badge { 
+        padding: 3px 12px;
+        font-size: 12px;
+        border-radius: 16px;
+      }
+
+      .registro-fila { 
+        gap: 12px;
+        padding: 11px 16px;
+        font-size: 13px;
+        transition: background 0.15s;
+      }
+      .registro-fila:hover { background: #f8f8f8; }
+
+      .foto-thumb, .foto-none { 
+        width: 48px;
+        height: 48px;
+      }
+
+      .btn { 
+        padding: 8px 16px;
+        font-size: 13px;
+      }
+    }
+
+    /* Desktop (> 1024px) */
+    @media (min-width: 1024px) {
+      body { 
+        font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+        background: #f5f5f5;
+      }
+
+      header {
+        padding: 16px 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        z-index: 50;
+      }
+      header h1 { 
+        font-size: 19px;
+        font-weight: 700;
+      }
+      .header-sub { 
+        font-size: 12px;
+        color: rgba(255,255,255,0.6);
+        display: block;
+      }
+      
+      .contenido { 
+        max-width: 1200px;
+        padding: 24px 24px 40px;
+      }
+
+      .resumen { 
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .card-stat { 
+        padding: 20px 22px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.2s;
+        min-width: unset;
+      }
+      .card-stat:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      }
+      .card-stat .numero { 
+        font-size: 36px;
+        font-weight: 800;
+      }
+      .card-stat .label { 
+        font-size: 14px;
+        margin-top: 6px;
+        font-weight: 500;
+      }
+
+      .filtros {
+        padding: 16px 18px;
+        gap: 14px;
+        margin-bottom: 24px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        align-items: flex-end;
+        flex-wrap: wrap;
+      }
+      .filtros label { 
+        font-size: 12px;
+        margin-bottom: 6px;
+        display: block;
+        font-weight: 600;
+        color: #555;
+      }
+      .filtros input { 
+        width: 220px;
+        padding: 10px 12px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        transition: all 0.2s;
+      }
+      .filtros input:hover {
+        border-color: #1565c0;
+      }
+      .filtros input:focus {
+        outline: none;
+        border-color: #1565c0;
+        box-shadow: 0 0 0 3px rgba(21,101,192,0.1);
+      }
+
+      .lista-titulo { 
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #1a1a2e;
+      }
+
+      .empleado-bloque { 
+        border-radius: 12px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: all 0.2s;
+      }
+      .empleado-bloque:hover {
+        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      }
+      .empleado-header { 
+        padding: 13px 18px;
+        font-size: 14px;
+        font-weight: 700;
+        background: #1a1a2e;
+        color: #fff;
+      }
+      .empleado-header .badge { 
+        padding: 4px 12px;
+        font-size: 12px;
+        border-radius: 18px;
+        background: rgba(255,255,255,0.2);
+      }
+
+      .registro-fila { 
+        gap: 14px;
+        padding: 12px 18px;
+        font-size: 14px;
+        transition: background 0.15s;
+        align-items: center;
+      }
+      .registro-fila:hover { 
+        background: #f9f9f9;
+      }
+      .registro-fila .fecha { 
+        color: #888;
+        white-space: nowrap;
+      }
+
+      .tipo-ingreso, .tipo-salida { 
+        min-width: 100px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .foto-thumb, .foto-none { 
+        width: 52px;
+        height: 52px;
+        border-radius: 10px;
+        flex-shrink: 0;
+      }
+
+      .foto-thumb:hover { 
+        opacity: 0.8;
+        transform: scale(1.05);
+      }
+
+      .btn { 
+        padding: 10px 18px;
+        font-size: 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .v-ok, .v-fail, .v-none { 
+        font-size: 12px;
+      }
+
+      a { 
+        color: #1565c0;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      a:hover { 
+        color: #1040a0;
+        text-decoration: underline;
+      }
+
+      #lightbox img { 
+        max-width: 90vw;
+        max-height: 85vh;
+        border-radius: 12px;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      }
+    }
+
     @media print {
       .filtros, header .btn { display: none !important; }
       body { background: #fff; }
