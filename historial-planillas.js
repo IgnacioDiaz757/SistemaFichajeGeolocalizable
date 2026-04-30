@@ -727,6 +727,13 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[`A${RES_INI+1}`] = "TOTAL HORAS DEL MES:";
   cambios[`B${RES_INI+1}`] = totalStr;
 
+  // ── Firma / Conformidad ──────────────────────────────
+  const FIRMA_ROW = RES_INI + 3; // fila 43 (deja fila 42 de separación)
+  cambios[`D${FIRMA_ROW}`]     = { v: "__________________", bold: true, size: 12 };
+  cambios[`D${FIRMA_ROW + 1}`] = { v: "NOMBRE Y APELLIDO", bold: true, size: 12 };
+  cambios[`G${FIRMA_ROW}`]     = { v: "_______________", bold: true, size: 12 };
+  cambios[`G${FIRMA_ROW + 1}`] = { v: "ACEPTO CONFORME", bold: true, size: 12 };
+
   return cambios;
 }
 

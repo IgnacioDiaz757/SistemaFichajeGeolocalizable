@@ -102,7 +102,7 @@ input[type="text"] {
   -webkit-appearance: none;
 }
 
-input[type="text"]:focus { border-color: #1a1a2e; background: var(--input-focus); }
+input[type="text"]:focus { border-color: #00ff00; background: var(--input-focus); }
 
 select {
   width: 100%;
@@ -123,7 +123,7 @@ select {
   cursor: pointer;
 }
 
-select:focus { border-color: #1a1a2e; background-color: var(--input-focus); }
+select:focus { border-color: #00ff00; background-color: var(--input-focus); }
 
 /* Área de foto */
 .foto-area {
