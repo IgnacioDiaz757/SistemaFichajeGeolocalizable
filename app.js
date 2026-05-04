@@ -364,19 +364,27 @@ function esperarGPS() {
 // ── Obras ─────────────────────────────────────────────────
 async function cargarObras() {
   const sel = document.getElementById("lugar");
-  const { data, error } = await db.from("obras").select("nombre").order("nombre");
+  const { data, error } = await db.from("obras").select("nombre, encargado").order("nombre");
   sel.innerHTML = '<option value="">Seleccioná la obra...</option>';
   if (!error && data && data.length) {
     data.forEach(o => {
       const opt = document.createElement("option");
       opt.value = o.nombre;
       opt.textContent = o.nombre;
+      opt.dataset.encargado = o.encargado || "";
       sel.appendChild(opt);
     });
   } else if (!error) {
     sel.innerHTML = '<option value="">Sin obras configuradas</option>';
   }
 }
+
+document.getElementById("lugar").addEventListener("change", function () {
+  const opt = this.options[this.selectedIndex];
+  const encargado = opt?.dataset?.encargado || "";
+  const div = document.getElementById("encargado-info");
+  if (div) div.textContent = encargado ? `Encargado: ${encargado}` : "";
+});
 cargarObras();
 
 // ── Cámara ────────────────────────────────────────────────
@@ -424,30 +432,60 @@ async function flipCamara() {
   }
 }
 
+// Redimensiona y comprime cualquier foto a máx 800px, JPEG 75%
+function comprimirFoto(file) {
+  const MAX = 800;
+  return new Promise((resolve) => {
+    const img    = new Image();
+    const tmpUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(tmpUrl);
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+        else        { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      c.getContext("2d").drawImage(img, 0, 0, w, h);
+      c.toBlob((blob) => {
+        resolve(new File([blob], file.name || `foto_${Date.now()}.jpg`, { type: "image/jpeg" }));
+      }, "image/jpeg", 0.75);
+    };
+    img.src = tmpUrl;
+  });
+}
+
 // Fallback: cuando el usuario elige foto con el input
-document.getElementById("foto-input").addEventListener("change", (e) => {
+document.getElementById("foto-input").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  mostrarPreview(file);
+  mostrarPreview(await comprimirFoto(file));
 });
 
 function capturarFoto() {
   const video  = document.getElementById("camara-video");
   const canvas = document.getElementById("camara-canvas");
+  const MAX    = 800;
 
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
+  let w = video.videoWidth, h = video.videoHeight;
+  if (w > MAX || h > MAX) {
+    if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+    else        { w = Math.round(w * MAX / h); h = MAX; }
+  }
+  canvas.width  = w;
+  canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (facingMode === "user") {
     ctx.translate(canvas.width, 0);
     ctx.scale(-1, 1);
   }
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, 0, 0, w, h);
 
   canvas.toBlob((blob) => {
     mostrarPreview(new File([blob], `foto_${Date.now()}.jpg`, { type: "image/jpeg" }));
     cerrarCamara();
-  }, "image/jpeg", 0.88);
+  }, "image/jpeg", 0.75);
 }
 
 function mostrarPreview(file) {

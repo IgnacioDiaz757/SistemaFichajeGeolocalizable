@@ -39,7 +39,7 @@ async function cargarEmpleados() {
 
 async function cargarCatalogos() {
   const [{ data: obras }, { data: contr }] = await Promise.all([
-    db.from("obras").select("nombre").order("nombre"),
+    db.from("obras").select("nombre, encargado").order("nombre"),
     db.from("contratistas").select("nombre").order("nombre"),
   ]);
   obrasLista = obras || [];
@@ -471,7 +471,8 @@ async function descargarPlanillaMes() {
     if (!res.ok) throw new Error("No se pudo cargar la plantilla");
     const ab = await res.arrayBuffer();
 
-    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anio);
+    const obraEmp1  = obrasLista.find(o => o.nombre === emp.obra);
+    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", obraEmp1?.encargado || "", registrosMes, mes, anio);
     const blob    = await aplicarCambiosAPlantilla(ab, cambios);
 
     // Subir a Storage para poder descargar/previsualizar desde el historial
@@ -522,7 +523,8 @@ async function descargarDesdeHistorial(key) {
     if (!res.ok) throw new Error("No se pudo cargar la plantilla");
     const ab = await res.arrayBuffer();
 
-    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anioN);
+    const obraEmp2  = obrasLista.find(o => o.nombre === emp.obra);
+    const cambios = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", obraEmp2?.encargado || "", registrosMes, mes, anioN);
     const blob = await aplicarCambiosAPlantilla(ab, cambios);
 
     const a = document.createElement("a");
@@ -576,7 +578,8 @@ async function previsualizarPlanilla(mesKey) {
 
     // Generar blob
     statusEl.textContent = "Generando Excel…";
-    const cambios  = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", registrosMes, mes, anioN);
+    const obraEmp3  = obrasLista.find(o => o.nombre === emp.obra);
+    const cambios  = construirCambios(emp.nombre, emp.puesto || "", emp.contratista || "", obraEmp3?.encargado || "", registrosMes, mes, anioN);
     const blob     = await aplicarCambiosAPlantilla(ab, cambios);
     const nombreDescarga = `Planilla_${emp.nombre.replace(/\s+/g,"_")}_${MESES[mes-1]}_${anio}.xlsx`;
 
@@ -648,7 +651,7 @@ function cerrarPreview() {
 }
 
 // ── Generar XLSX (lógica idéntica a admin.js) ─────────────
-function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
+function construirCambios(nombre, puesto, contratista, encargado, registros, mes, anio) {
   const M = MAPEO;
   const cambios = {};
 
@@ -658,7 +661,7 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[M.mesAnio]     = `${MESES[mes - 1]}-${String(anio).slice(2)}`;
 
   for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
-    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", smallStyle: true };
+    cambios[`${M.colEncargado}${r}`] = { v: encargado.toUpperCase() || "SIN ENCARGADO", bold: true, size: 14 };
   }
 
   const byDate = {};
@@ -690,6 +693,20 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     }
 
     const { ingresos = [], salidas = [] } = byDate[fechaKey] || {};
+    const ausente = ingresos.length === 0 && salidas.length === 0;
+
+    if (ausente) {
+      cambios[`A${fila}`] = { v: diaLabel, sundayCol: "A" };
+      cambios[`B${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`C${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`D${fila}`] = { v: "", sundayCol: "D" };
+      cambios[`E${fila}`] = { v: "", sundayCol: "E" };
+      cambios[`F${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`G${fila}`] = { v: "", sundayCol: "BCFG" };
+      fila++;
+      continue;
+    }
+
     const maxF = Math.max(ingresos.length, salidas.length, 1);
 
     for (let i = 0; i < maxF && fila <= M.dataEndRow; i++) {

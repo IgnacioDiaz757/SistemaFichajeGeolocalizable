@@ -43,13 +43,24 @@ async function cargarEmpleados() {
 
   lista.innerHTML = data.map(e => {
     const sub = [e.puesto, e.obra, e.contratista].filter(Boolean).join(" · ");
+    const obraEsc = (e.obra || "").replace(/'/g, "\\'");
     return `
-    <div class="empleado-item">
-      <div>
+    <div class="empleado-item" id="emp-item-${e.id}">
+      <div style="flex:1;min-width:0">
         <span class="empleado-nombre">👤 ${e.nombre}</span>
-        ${sub ? `<span style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">${sub}</span>` : ""}
+        <span id="emp-sub-${e.id}" style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">${sub || "Sin obra asignada"}</span>
+        <div id="emp-edit-${e.id}" style="display:none;margin-top:6px;display:none;gap:6px;align-items:center;flex-wrap:wrap">
+          <select id="emp-sel-${e.id}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:6px">
+            <option value="">— Sin obra —</option>
+          </select>
+          <button onclick="guardarObraEmpleado('${e.id}')" style="font-size:12px;padding:4px 10px;background:#2e7d32;color:#fff;border:none;border-radius:6px;cursor:pointer">Guardar</button>
+          <button onclick="cancelarEditarObra('${e.id}')" style="font-size:12px;padding:4px 10px;background:#888;color:#fff;border:none;border-radius:6px;cursor:pointer">Cancelar</button>
+        </div>
       </div>
-      <button class="btn-del" onclick="eliminarEmpleado('${e.id}', '${e.nombre.replace(/'/g, "\\'")}')">✕ Eliminar</button>
+      <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">
+        <button class="btn-azul btn" style="font-size:12px;padding:5px 10px" onclick="abrirEditarObra('${e.id}', '${obraEsc}')">✏️ Obra</button>
+        <button class="btn-del" onclick="eliminarEmpleado('${e.id}', '${e.nombre.replace(/'/g, "\\'")}')">✕</button>
+      </div>
     </div>`;
   }).join("");
 }
@@ -59,6 +70,49 @@ async function eliminarEmpleado(id, nombre) {
   const { error } = await db.from("empleados").delete().eq("id", id);
   if (error) { alert("Error al eliminar."); return; }
   cargarEmpleados();
+}
+
+async function abrirEditarObra(id, obraActual) {
+  const editDiv = document.getElementById(`emp-edit-${id}`);
+  const sel     = document.getElementById(`emp-sel-${id}`);
+
+  // Cargar obras si el select solo tiene la opción vacía
+  if (sel.options.length <= 1) {
+    const { data } = await db.from("obras").select("nombre").order("nombre");
+    (data || []).forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o.nombre; opt.textContent = o.nombre;
+      sel.appendChild(opt);
+    });
+  }
+
+  // Seleccionar la obra actual
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === obraActual) { sel.selectedIndex = i; break; }
+  }
+
+  editDiv.style.display = "flex";
+}
+
+function cancelarEditarObra(id) {
+  document.getElementById(`emp-edit-${id}`).style.display = "none";
+}
+
+async function guardarObraEmpleado(id) {
+  const sel      = document.getElementById(`emp-sel-${id}`);
+  const obraNueva = sel.value || null;
+
+  const { error } = await db.from("empleados").update({ obra: obraNueva }).eq("id", id);
+  if (error) { alert("Error al guardar la obra."); return; }
+
+  // Actualizar el subtítulo sin recargar toda la lista
+  const subEl = document.getElementById(`emp-sub-${id}`);
+  subEl.textContent = obraNueva || "Sin obra asignada";
+  document.getElementById(`emp-edit-${id}`).style.display = "none";
+
+  // Actualizar el onclick del botón editar con la nueva obra
+  const btn = document.querySelector(`#emp-item-${id} .btn-azul`);
+  if (btn) btn.setAttribute("onclick", `abrirEditarObra('${id}', '${(obraNueva || "").replace(/'/g, "\\'")}')`);
 }
 
 // ── Cámara ────────────────────────────────────────────────

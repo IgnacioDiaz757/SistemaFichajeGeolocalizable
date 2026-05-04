@@ -30,6 +30,7 @@ function renderGestionObras() {
     <div class="obra-item">
       <div class="obra-info">
         <span class="obra-nombre">${o.nombre}</span>
+        <span class="obra-coords">${o.encargado ? `Encargado: ${o.encargado}` : "Sin encargado asignado"}</span>
         <span class="obra-coords">${o.lat != null ? `${o.lat}, ${o.lng} — radio ${o.radio}m` : "Sin coordenadas GPS"}</span>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -54,24 +55,26 @@ function toggleNuevaObra() {
 }
 
 async function agregarObra() {
-  const nombre = document.getElementById("z-nombre").value.trim();
-  const latVal = document.getElementById("z-lat").value;
-  const lngVal = document.getElementById("z-lng").value;
-  const lat    = latVal ? parseFloat(latVal) : null;
-  const lng    = lngVal ? parseFloat(lngVal) : null;
-  const radio  = parseInt(document.getElementById("z-radio").value) || 200;
+  const nombre     = document.getElementById("z-nombre").value.trim();
+  const encargado  = document.getElementById("z-encargado").value.trim();
+  const latVal     = document.getElementById("z-lat").value;
+  const lngVal     = document.getElementById("z-lng").value;
+  const lat        = latVal ? parseFloat(latVal) : null;
+  const lng        = lngVal ? parseFloat(lngVal) : null;
+  const radio      = parseInt(document.getElementById("z-radio").value) || 200;
 
   if (!nombre) { alert("Ingresá el nombre de la obra."); return; }
 
-  const { data, error } = await db.from("obras").insert([{ nombre, lat, lng, radio }]).select();
+  const { data, error } = await db.from("obras").insert([{ nombre, encargado: encargado || null, lat, lng, radio }]).select();
   if (error) { alert("Error al guardar la obra."); return; }
 
   obras.push(data[0]);
   renderGestionObras();
-  document.getElementById("z-nombre").value = "";
-  document.getElementById("z-lat").value    = "";
-  document.getElementById("z-lng").value    = "";
-  document.getElementById("z-radio").value  = "200";
+  document.getElementById("z-nombre").value    = "";
+  document.getElementById("z-encargado").value = "";
+  document.getElementById("z-lat").value       = "";
+  document.getElementById("z-lng").value       = "";
+  document.getElementById("z-radio").value     = "200";
   document.getElementById("nueva-obra-form").style.display = "none";
   aplicarFiltros();
 }
@@ -453,7 +456,7 @@ function cerrarModalPlanilla() {
 let _empleadosPlanilla = [];
 
 async function cargarEmpleadosPlanilla() {
-  const { data } = await db.from("empleados").select("nombre, puesto, contratista").order("nombre");
+  const { data } = await db.from("empleados").select("nombre, puesto, contratista, obra").order("nombre");
   _empleadosPlanilla = data || [];
 
   // Llenar selector de contratistas con valores únicos
@@ -482,6 +485,8 @@ function filtrarEmpleadosPlanilla() {
     opt.textContent = e.nombre;
     opt.dataset.puesto      = e.puesto      || "";
     opt.dataset.contratista = e.contratista || "";
+    const obraEmp = obras.find(o => o.nombre === e.obra);
+    opt.dataset.encargado   = obraEmp?.encargado || "";
     sel.appendChild(opt);
   });
 }
@@ -518,6 +523,7 @@ async function generarPlanilla() {
   const opt         = sel.options[sel.selectedIndex];
   const puesto      = opt.dataset.puesto      || "";
   const contratista = opt.dataset.contratista || "";
+  const encargado   = opt.dataset.encargado   || "";
 
   estado.textContent = "Consultando registros...";
 
@@ -542,7 +548,7 @@ async function generarPlanilla() {
 
     estado.textContent = "Generando Excel...";
 
-    const cambios = construirCambios(nombreEmp, puesto, contratista, data, mes, anio);
+    const cambios = construirCambios(nombreEmp, puesto, contratista, encargado, data, mes, anio);
     const blob    = await aplicarCambiosAPlantilla(ab, cambios);
 
     // Descargar localmente (siempre)
@@ -585,7 +591,7 @@ async function generarPlanilla() {
 }
 
 // Construye el mapa celda → valor con todos los datos del mes
-function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
+function construirCambios(nombre, puesto, contratista, encargado, registros, mes, anio) {
   const M = MAPEO_PLANILLA;
   const cambios = {};
 
@@ -595,7 +601,7 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
   cambios[M.mesAnio]     = `${MESES_ES_PL[mes - 1]}-${String(anio).slice(2)}`;
 
   for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
-    cambios[`${M.colEncargado}${r}`] = { v: "RIVERAS DEL SUQUIA", smallStyle: true };
+    cambios[`${M.colEncargado}${r}`] = { v: encargado.toUpperCase() || "SIN ENCARGADO", smallStyle: true };
   }
 
   // Agrupar registros por fecha
@@ -630,6 +636,20 @@ function construirCambios(nombre, puesto, contratista, registros, mes, anio) {
     }
 
     const { ingresos = [], salidas = [] } = byDate[fechaKey] || {};
+    const ausente = ingresos.length === 0 && salidas.length === 0;
+
+    if (ausente) {
+      cambios[`A${fila}`] = { v: diaLabel, sundayCol: "A" };
+      cambios[`B${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`C${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`D${fila}`] = { v: "", sundayCol: "D" };
+      cambios[`E${fila}`] = { v: "", sundayCol: "E" };
+      cambios[`F${fila}`] = { v: "", sundayCol: "BCFG" };
+      cambios[`G${fila}`] = { v: "", sundayCol: "BCFG" };
+      fila++;
+      continue;
+    }
+
     const maxF = Math.max(ingresos.length, salidas.length, 1);
 
     for (let i = 0; i < maxF && fila <= M.dataEndRow; i++) {
@@ -705,7 +725,7 @@ function agregarEstiloLetraChica(stylesXml) {
   const newFontIdx = parseInt(fontsEl.getAttribute("count"));
   const font = doc.createElementNS(NS, "font");
   font.appendChild(doc.createElementNS(NS, "b"));
-  const sz = doc.createElementNS(NS, "sz");   sz.setAttribute("val", "10");      font.appendChild(sz);
+  const sz = doc.createElementNS(NS, "sz");   sz.setAttribute("val", "14");      font.appendChild(sz);
   const nm = doc.createElementNS(NS, "name"); nm.setAttribute("val", "Calibri"); font.appendChild(nm);
   const fm = doc.createElementNS(NS, "family"); fm.setAttribute("val", "2");     font.appendChild(fm);
   fontsEl.appendChild(font);
