@@ -19,7 +19,7 @@ let filtroMes = "";
 const MAPEO = {
   puesto: "A2", nombre: "A3", contratista: "C4", mesAnio: "G2",
   dataStartRow: 6, dataEndRow: 36,
-  colDia: "A", colEntrada: "B", colSalida: "C", colUbicacion: "F", colEncargado: "G",
+  colDia: "A", colEntrada: "B", colSalida: "C", colNombre: "D", colUbicacion: "F", colEncargado: "G",
 };
 const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -661,7 +661,7 @@ function construirCambios(nombre, puesto, contratista, encargado, registros, mes
   cambios[M.mesAnio]     = `${MESES[mes - 1]}-${String(anio).slice(2)}`;
 
   for (let r = M.dataStartRow; r <= M.dataEndRow; r++) {
-    cambios[`${M.colEncargado}${r}`] = { v: encargado.toUpperCase() || "SIN ENCARGADO", bold: true, size: 14 };
+    cambios[`${M.colEncargado}${r}`] = { v: encargado.toUpperCase() || "SIN ENCARGADO", bold: true, size: 10 };
   }
 
   const byDate = {};
@@ -715,7 +715,8 @@ function construirCambios(nombre, puesto, contratista, encargado, registros, mes
       cambios[`${M.colDia}${fila}`]       = i === 0 ? diaLabel : "";
       cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
-      cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
+      cambios[`${M.colNombre}${fila}`]    = { v: i === 0 ? nombre.toUpperCase() : "", bold: true, size: 10 };
+      cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 10 };
       fila++;
     }
   }
@@ -724,7 +725,8 @@ function construirCambios(nombre, puesto, contratista, encargado, registros, mes
     cambios[`${M.colDia}${r}`]       = "";
     cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
     cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
-    cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
+    cambios[`${M.colNombre}${r}`]    = { v: "", bold: true, size: 10 };
+    cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 10 };
   }
 
   // ── Resumen de horas — solo total mensual ──

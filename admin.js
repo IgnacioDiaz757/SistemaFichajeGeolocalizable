@@ -502,6 +502,7 @@ const MAPEO_PLANILLA = {
   colDia:       "A",    // A6:A36
   colEntrada:   "B",    // B6:B36
   colSalida:    "C",    // C6:C36
+  colNombre:    "D",    // D6:D36
   colUbicacion: "F",    // F6:F36
   colEncargado: "G",    // G6:G36
 };
@@ -658,7 +659,8 @@ function construirCambios(nombre, puesto, contratista, encargado, registros, mes
       cambios[`${M.colDia}${fila}`]       = i === 0 ? diaLabel : "";
       cambios[`${M.colEntrada}${fila}`]   = { v: ing ? new Date(ing.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
       cambios[`${M.colSalida}${fila}`]    = { v: sal ? new Date(sal.hora).toLocaleTimeString("es-AR", { hour12: false }) : "", bold: true, size: 14 };
-      cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 14 };
+      cambios[`${M.colNombre}${fila}`]    = { v: i === 0 ? nombre.toUpperCase() : "", bold: true, size: 10 };
+      cambios[`${M.colUbicacion}${fila}`] = { v: (ing?.lugar || sal?.lugar || "").toUpperCase(), bold: true, size: 10 };
       fila++;
     }
   }
@@ -669,7 +671,8 @@ function construirCambios(nombre, puesto, contratista, encargado, registros, mes
     cambios[`${M.colDia}${r}`]       = "";
     cambios[`${M.colEntrada}${r}`]   = { v: "", bold: true, size: 14 };
     cambios[`${M.colSalida}${r}`]    = { v: "", bold: true, size: 14 };
-    cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 14 };
+    cambios[`${M.colNombre}${r}`]    = { v: "", bold: true, size: 10 };
+    cambios[`${M.colUbicacion}${r}`] = { v: "", bold: true, size: 10 };
   }
 
   // ── Resumen de horas — solo total mensual ──
@@ -725,7 +728,7 @@ function agregarEstiloLetraChica(stylesXml) {
   const newFontIdx = parseInt(fontsEl.getAttribute("count"));
   const font = doc.createElementNS(NS, "font");
   font.appendChild(doc.createElementNS(NS, "b"));
-  const sz = doc.createElementNS(NS, "sz");   sz.setAttribute("val", "14");      font.appendChild(sz);
+  const sz = doc.createElementNS(NS, "sz");   sz.setAttribute("val", "10");      font.appendChild(sz);
   const nm = doc.createElementNS(NS, "name"); nm.setAttribute("val", "Calibri"); font.appendChild(nm);
   const fm = doc.createElementNS(NS, "family"); fm.setAttribute("val", "2");     font.appendChild(fm);
   fontsEl.appendChild(font);
@@ -968,7 +971,7 @@ async function generarPlanillaEjemplo() {
 
     const cambios = construirCambios(
       "EMPLEADO EJEMPLO", "OPERARIO", "RIVERAS DEL SUQUIA",
-      registros, mes, anio
+      "", registros, mes, anio
     );
     const blob = await aplicarCambiosAPlantilla(ab, cambios);
 
