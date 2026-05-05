@@ -87,9 +87,10 @@ function renderListaEmpleados() {
         <span class="persona-nombre">${esc(e.nombre)}</span>
         <span class="persona-sub">${esc([...new Set([e.contratista, e.obra].filter(Boolean))].join(" · ") || "Sin datos")}</span>
       </div>
-      <span style="font-size:15px;opacity:0.6">👤</span>
+      <i data-lucide="user" style="width:15px;height:15px;opacity:0.6;vertical-align:middle"></i>
     </div>
   `).join("");
+  lucide.createIcons();
 }
 
 // ── Seleccionar persona ───────────────────────────────────
@@ -108,7 +109,7 @@ async function seleccionarEmpleado(id) {
 
   document.getElementById("panel-historial").innerHTML = `
     <div class="loading-state">
-      <span style="font-size:32px">⏳</span>
+      <i data-lucide="loader" style="width:32px;height:32px"></i>
       <p>Cargando historial de ${esc(emp.nombre)}…</p>
     </div>`;
 
@@ -164,8 +165,8 @@ function renderPanelHistorial() {
       <div class="persona-datos">
         <h2>${esc(e.nombre)}</h2>
         <div class="persona-tags">
-          ${e.contratista ? `<span class="tag tag-empresa">🏢 ${esc(e.contratista)}</span>` : ""}
-          ${e.obra        ? `<span class="tag tag-obra">🏗 ${esc(e.obra)}</span>`             : ""}
+          ${e.contratista ? `<span class="tag tag-empresa"><i data-lucide="building-2"></i> ${esc(e.contratista)}</span>` : ""}
+          ${e.obra        ? `<span class="tag tag-obra"><i data-lucide="hard-hat"></i> ${esc(e.obra)}</span>`             : ""}
           ${e.puesto      ? `<span class="tag tag-puesto">${esc(e.puesto)}</span>`             : ""}
         </div>
       </div>

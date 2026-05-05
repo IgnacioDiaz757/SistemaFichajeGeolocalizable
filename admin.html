@@ -1178,6 +1178,7 @@
       .foto-none  { width: 34px; height: 34px; }
     }
   </style>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
@@ -1219,7 +1220,7 @@
     <!-- Stats -->
     <div class="resumen">
       <div class="card-stat stat-total">
-        <div class="stat-ico">📊</div>
+        <div class="stat-ico"><i data-lucide="bar-chart-2"></i></div>
         <div class="stat-body">
           <div class="numero gris" id="cnt-total">—</div>
           <div class="label">Total registros</div>
@@ -1272,7 +1273,7 @@
             <input type="number" id="z-radio" value="200">
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-gris" style="background:var(--zone-bg)" onclick="usarMiUbicacion()">📌 Mi ubicación</button>
+            <button class="btn btn-gris" style="background:var(--zone-bg)" onclick="usarMiUbicacion()"><i data-lucide="map-pin"></i> Mi ubicación</button>
             <button class="btn btn-verde" onclick="agregarObra()">Guardar</button>
           </div>
         </div>

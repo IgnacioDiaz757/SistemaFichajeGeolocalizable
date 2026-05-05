@@ -288,9 +288,9 @@ function renderTabla(datos) {
     const icono   = r.tipo === "ingreso" ? "▲" : "▼";
     const label   = r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1);
     const mapsUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
-    const reconocimiento = r.reconocido_facial 
-      ? '<span title="Reconocido por facial" style="color:#2e7d32;font-weight:bold">👤 Facial</span>'
-      : '<span title="Datos completados manualmente" style="color:#ff6f00;font-weight:bold">🖋️ Manual</span>';
+    const reconocimiento = r.reconocido_facial
+      ? '<span title="Reconocido por facial" style="color:#2e7d32;font-weight:bold"><i data-lucide="user"></i> Facial</span>'
+      : '<span title="Datos completados manualmente" style="color:#ff6f00;font-weight:bold"><i data-lucide="pen"></i> Manual</span>';
 
     const tr = document.createElement("tr");
     tr.id = `row-${r.id}`;
@@ -302,11 +302,12 @@ function renderTabla(datos) {
       <td>${r.lugar || "—"}</td>
       <td>${reconocimiento}</td>
       <td>${badgeVerificacion(r)}</td>
-      <td class="nowrap"><a href="${mapsUrl}" target="_blank" rel="noopener">📍 Ver mapa</a></td>
+      <td class="nowrap"><a href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i> Ver mapa</a></td>
       <td><button class="btn-del" onclick="eliminar(${r.id})">✕</button></td>
     `;
     tbody.appendChild(tr);
   });
+  lucide.createIcons();
 }
 
 function renderListaPorObra(datos) {

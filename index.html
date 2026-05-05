@@ -6,11 +6,12 @@
   <title>Asistencia Obra</title>
   <link rel="stylesheet" href="styles.css">
   <script>if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark");</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
 
   <button class="btn-tema" id="btn-tema" onclick="toggleTema()" title="Cambiar tema"></button>
-  <a href="login.html" class="btn-admin" title="Acceso admin">🔒</a>
+  <a href="login.html" class="btn-admin" title="Acceso admin"><i data-lucide="lock"></i></a>
 
   <!-- Modal permiso GPS -->
   <div id="modal-gps" class="gps-overlay">
@@ -18,11 +19,13 @@
 
       <!-- Vista: pedir permiso -->
       <div id="gps-vista-pedir">
-        <div class="gps-icono">📍</div>
+       <div class="gps-icono">
+         <i data-lucide="map-pinned"></i>
+           </div>
         <h2 class="gps-titulo">Permiso de ubicación</h2>
         <p class="gps-texto">Para verificar que te encontrás en la obra al marcar asistencia, necesitamos acceso a tu ubicación GPS.</p>
         <button class="gps-btn-permitir" id="btn-permitir-gps" onclick="solicitarUbicacion()">
-          📍 Permitir ubicación
+          <i data-lucide="map-pin"></i> Permitir ubicación
         </button>
         <p id="gps-estado" class="gps-estado"></p>
         <button class="gps-btn-omitir" onclick="omitirGPS()">Continuar sin GPS</button>
@@ -30,7 +33,9 @@
 
       <!-- Vista: permiso denegado -->
       <div id="gps-vista-denegado" style="display:none">
-        <div class="gps-icono">🔒</div>
+        <div class="gps-icono">
+          <i data-lucide="lock-keyhole"></i>
+         </div>
         <h2 class="gps-titulo">Ubicación bloqueada</h2>
         <p class="gps-texto">El navegador tiene bloqueado el acceso a la ubicación. Seguí estos pasos para activarla:</p>
         <ol class="gps-pasos">
@@ -38,7 +43,7 @@
           <li>Buscá <strong>"Ubicación"</strong> y cambialo a <strong>"Permitir"</strong></li>
           <li>Recargá la página</li>
         </ol>
-        <button class="gps-btn-permitir" onclick="location.reload()">🔄 Recargar página</button>
+        <button class="gps-btn-permitir" onclick="location.reload()"><i data-lucide="refresh-cw"></i> Recargar página</button>
         <br>
         <button class="gps-btn-omitir" onclick="omitirGPS()">Continuar sin GPS</button>
       </div>
@@ -136,6 +141,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script src="app.js"></script>
+  <script> lucide.createIcons();</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+ 
+
 
 </body>
 </html>

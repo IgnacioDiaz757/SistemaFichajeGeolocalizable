@@ -47,7 +47,7 @@ async function cargarEmpleados() {
     return `
     <div class="empleado-item" id="emp-item-${e.id}">
       <div style="flex:1;min-width:0">
-        <span class="empleado-nombre">👤 ${e.nombre}</span>
+        <span class="empleado-nombre"><i data-lucide="user"></i> ${e.nombre}</span>
         <span id="emp-sub-${e.id}" style="display:block;font-size:12px;color:var(--text-muted);margin-top:2px">${sub || "Sin obra asignada"}</span>
         <div id="emp-edit-${e.id}" style="display:none;margin-top:6px;display:none;gap:6px;align-items:center;flex-wrap:wrap">
           <select id="emp-sel-${e.id}" style="font-size:13px;padding:4px 6px;border:1px solid #ccc;border-radius:6px">
@@ -58,7 +58,7 @@ async function cargarEmpleados() {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">
-        <button class="btn-azul btn" style="font-size:12px;padding:5px 10px" onclick="abrirEditarObra('${e.id}', '${obraEsc}')">✏️ Obra</button>
+        <button class="btn-azul btn" style="font-size:12px;padding:5px 10px" onclick="abrirEditarObra('${e.id}', '${obraEsc}')"><i data-lucide="pencil"></i> Obra</button>
         <button class="btn-del" onclick="eliminarEmpleado('${e.id}', '${e.nombre.replace(/'/g, "\\'")}')">✕</button>
       </div>
     </div>`;

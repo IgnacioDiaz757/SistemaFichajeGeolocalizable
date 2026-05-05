@@ -116,14 +116,14 @@ function renderLista(datos) {
       const mapsUrl = `https://www.google.com/maps?q=${r.lat},${r.lng}`;
       const fotoHtml = r.foto_url
         ? `<img class="foto-thumb" src="${r.foto_url}" onclick="verFoto('${r.foto_url}')" alt="foto">`
-        : `<div class="foto-none">📷</div>`;
+        : `<div class="foto-none"><i data-lucide="camera"></i></div>`;
 
       return `
         <div class="registro-fila">
           ${fotoHtml}
           <span class="tipo-${r.tipo}">${icono} ${label}</span>
           <span class="fecha">${d.toLocaleDateString("es-AR")} ${d.toLocaleTimeString("es-AR", { hour12: false })}</span>
-          <a href="${mapsUrl}" target="_blank" rel="noopener" style="font-size:13px">📍 Ver mapa</a>
+          <a href="${mapsUrl}" target="_blank" rel="noopener" style="font-size:13px"><i data-lucide="map-pin"></i> Ver mapa</a>
           ${badgeVerificacion(r)}
         </div>`;
     }).join("");
@@ -137,6 +137,7 @@ function renderLista(datos) {
     `;
     contenedor.appendChild(bloque);
   });
+  lucide.createIcons();
 }
 
 // ── GPS ───────────────────────────────────────────────────

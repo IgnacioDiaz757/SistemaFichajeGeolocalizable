@@ -10,7 +10,10 @@ function toggleTema() {
 function actualizarIconTema() {
   const btn = document.getElementById("btn-tema");
   if (!btn) return;
-  btn.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+  btn.innerHTML = document.documentElement.getAttribute("data-theme") === "dark"
+    ? '<i data-lucide="sun"></i>'
+    : '<i data-lucide="moon"></i>';
+  lucide.createIcons();
 }
 
 actualizarIconTema();
