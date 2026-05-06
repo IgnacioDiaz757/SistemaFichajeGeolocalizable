@@ -238,12 +238,13 @@ setInterval(() => {
   }
 }, 5000);
 
-let lat         = null;
-let lng         = null;
-let fotoFile    = null;
-let stream      = null;
-let facingMode  = "environment"; // "environment" = trasera, "user" = frontal
-let reconocidoPorFacial = false; // Rastrear si fue reconocido por facial
+let lat               = null;
+let lng               = null;
+let fotoFile          = null;
+let stream            = null;
+let facingMode        = "environment"; // "environment" = trasera, "user" = frontal
+let reconocidoPorFacial = false;
+let tipoSeleccionado  = null;
 
 // ── Reloj ─────────────────────────────────────────────────
 setInterval(() => {
@@ -522,6 +523,21 @@ function cerrarCamara() {
   document.getElementById("camara-modal").style.display = "none";
 }
 
+// ── Selección de tipo + Confirmar ─────────────────────────
+function seleccionarTipo(tipo) {
+  tipoSeleccionado = tipo;
+  document.getElementById("btn-ingreso").classList.toggle("btn-seleccionado", tipo === "ingreso");
+  document.getElementById("btn-salida").classList.toggle("btn-seleccionado",  tipo === "salida");
+  const btnConfirmar = document.getElementById("btn-confirmar");
+  btnConfirmar.style.display = "block";
+  lucide.createIcons();
+}
+
+function confirmarMarca() {
+  if (!tipoSeleccionado) return;
+  marcar(tipoSeleccionado);
+}
+
 // ── Marcar ────────────────────────────────────────────────
 async function marcar(tipo) {
   const empleado   = document.getElementById("empleado").value.trim();
@@ -599,6 +615,10 @@ async function marcar(tipo) {
 function resetFoto() {
   fotoFile = null;
   reconocidoPorFacial = false;
+  tipoSeleccionado = null;
+  document.getElementById("btn-ingreso").classList.remove("btn-seleccionado");
+  document.getElementById("btn-salida").classList.remove("btn-seleccionado");
+  document.getElementById("btn-confirmar").style.display = "none";
   ocultarScanner();
   const preview = document.getElementById("foto-preview");
   if (preview.src.startsWith("blob:")) URL.revokeObjectURL(preview.src);

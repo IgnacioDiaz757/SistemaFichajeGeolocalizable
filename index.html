@@ -128,9 +128,13 @@
     </div>
 
     <div class="botones">
-      <button id="btn-ingreso" onclick="marcar('ingreso')">▲ Ingreso</button>
-      <button id="btn-salida"  onclick="marcar('salida')">▼ Salida</button>
+      <button id="btn-ingreso" onclick="seleccionarTipo('ingreso')">▲ Ingreso</button>
+      <button id="btn-salida"  onclick="seleccionarTipo('salida')">▼ Salida</button>
     </div>
+
+    <button id="btn-confirmar" onclick="confirmarMarca()" style="display:none">
+      <i data-lucide="check-circle"></i> Confirmar
+    </button>
 
     <p id="mensaje"></p>
   </div>

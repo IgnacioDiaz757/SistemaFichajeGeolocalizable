@@ -486,6 +486,25 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 #btn-ingreso { background: #2e7d32; color: #fff; }
 #btn-salida  { background: #c62828; color: #fff; }
 
+#btn-ingreso.btn-seleccionado { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #2e7d32; }
+#btn-salida.btn-seleccionado  { box-shadow: 0 0 0 3px #fff, 0 0 0 5px #c62828; }
+
+#btn-confirmar {
+  width: 100%;
+  margin-top: 10px;
+  padding: 16px;
+  background: #1565c0;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 700;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+#btn-confirmar:active { transform: scale(0.97); }
+
 #mensaje {
   margin-top: 18px;
   text-align: center;
