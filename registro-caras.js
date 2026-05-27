@@ -58,7 +58,19 @@ async function cargarEmpleados() {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">
-        <button class="btn-azul btn" style="font-size:12px;padding:5px 10px" onclick="abrirEditarObra('${e.id}', '${obraEsc}')"><i data-lucide="pencil"></i> Obra</button>
+  <button 
+  class="btn-azul btn" 
+  style="font-size:12px;padding:5px 10px"
+  onclick="abrirModalEditar(
+    '${e.id}',
+    '${e.nombre.replace(/'/g, "\\'")}',
+    '${(e.puesto || "").replace(/'/g, "\\'")}',
+    '${(e.obra || "").replace(/'/g, "\\'")}',
+    '${(e.contratista || "").replace(/'/g, "\\'")}'
+  )"
+>
+  <i data-lucide="pencil"></i> Editar
+</button>
         <button class="btn-del" onclick="eliminarEmpleado('${e.id}', '${e.nombre.replace(/'/g, "\\'")}')">✕</button>
       </div>
     </div>`;
@@ -113,6 +125,76 @@ async function guardarObraEmpleado(id) {
   // Actualizar el onclick del botón editar con la nueva obra
   const btn = document.querySelector(`#emp-item-${id} .btn-azul`);
   if (btn) btn.setAttribute("onclick", `abrirEditarObra('${id}', '${(obraNueva || "").replace(/'/g, "\\'")}')`);
+}
+
+let empleadoEditando = null;
+
+async function abrirModalEditar(id, nombre, puesto, obra, empresa) {
+
+  empleadoEditando = id;
+
+  document.getElementById("edit-nombre").value = nombre || "";
+  document.getElementById("edit-puesto").value = puesto || "";
+
+  const selObra = document.getElementById("edit-obra");
+  if (selObra.options.length <= 1) {
+    const { data: obras } = await db.from("obras").select("nombre").order("nombre");
+    (obras || []).forEach(o => {
+      const opt = document.createElement("option");
+      opt.value = o.nombre;
+      opt.textContent = o.nombre;
+      selObra.appendChild(opt);
+    });
+  }
+  selObra.value = obra || "";
+
+  const selEmpresa = document.getElementById("edit-empresa");
+  if (selEmpresa.options.length <= 1) {
+    const { data: contratistas } = await db.from("contratistas").select("nombre").order("nombre");
+    (contratistas || []).forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.nombre;
+      opt.textContent = c.nombre;
+      selEmpresa.appendChild(opt);
+    });
+  }
+  selEmpresa.value = empresa || "";
+
+  document.getElementById("modal-editar").style.display = "flex";
+  if (window.lucide) lucide.createIcons();
+}
+
+function cerrarModalEditar() {
+  document.getElementById("modal-editar").style.display = "none";
+}
+
+async function guardarEdicionEmpleado() {
+
+  if (!empleadoEditando) return;
+
+  const nombre = document.getElementById("edit-nombre").value.trim();
+  const puesto = document.getElementById("edit-puesto").value.trim();
+  const obra = document.getElementById("edit-obra").value.trim();
+  const empresa = document.getElementById("edit-empresa").value.trim();
+
+  const { error } = await db
+    .from("empleados")
+    .update({
+      nombre,
+      puesto,
+      obra,
+      contratista: empresa
+    })
+    .eq("id", empleadoEditando);
+
+  if (error) {
+    alert("Error al actualizar empleado");
+    console.error(error);
+    return;
+  }
+
+  cerrarModalEditar();
+  cargarEmpleados();
 }
 
 // ── Cámara ────────────────────────────────────────────────
