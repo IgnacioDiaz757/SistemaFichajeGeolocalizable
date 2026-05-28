@@ -44,6 +44,7 @@ function renderGestionObras() {
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn btn-azul" style="font-size:12px;padding:5px 10px" onclick="copiarLink('${link}')">🔗 Copiar link</button>
+        <button class="btn btn-gris" style="font-size:12px;padding:5px 10px" onclick="abrirModalEditarObra('${o.id}')">✏ Editar</button>
         <button class="btn-del" onclick="eliminarObra('${o.id}')">✕</button>
       </div>
     </div>`;
@@ -95,6 +96,45 @@ async function eliminarObra(id) {
   obras = obras.filter(o => o.id !== id);
   renderGestionObras();
   aplicarFiltros();
+}
+
+function abrirModalEditarObra(id) {
+  const o = obras.find(o => String(o.id) === String(id));
+  if (!o) return;
+  document.getElementById("eo-id").value        = o.id;
+  document.getElementById("eo-nombre").value    = o.nombre     || "";
+  document.getElementById("eo-encargado").value = o.encargado  || "";
+  document.getElementById("eo-lat").value       = o.lat        ?? "";
+  document.getElementById("eo-lng").value       = o.lng        ?? "";
+  document.getElementById("eo-radio").value     = o.radio      || 200;
+  document.getElementById("modal-editar-obra").style.display = "flex";
+  lucide.createIcons();
+}
+
+function cerrarModalEditarObra() {
+  document.getElementById("modal-editar-obra").style.display = "none";
+}
+
+async function guardarEditarObra() {
+  const id        = document.getElementById("eo-id").value;
+  const nombre    = document.getElementById("eo-nombre").value.trim();
+  const encargado = document.getElementById("eo-encargado").value.trim();
+  const latVal    = document.getElementById("eo-lat").value;
+  const lngVal    = document.getElementById("eo-lng").value;
+  const lat       = latVal ? parseFloat(latVal) : null;
+  const lng       = lngVal ? parseFloat(lngVal) : null;
+  const radio     = parseInt(document.getElementById("eo-radio").value) || 200;
+
+  if (!nombre) { alert("Ingresá el nombre de la obra."); return; }
+
+  const { error } = await db.from("obras").update({ nombre, encargado: encargado || null, lat, lng, radio }).eq("id", id);
+  if (error) { alert("Error al guardar."); return; }
+
+  const idx = obras.findIndex(o => String(o.id) === String(id));
+  if (idx !== -1) obras[idx] = { ...obras[idx], nombre, encargado: encargado || null, lat, lng, radio };
+  renderGestionObras();
+  poblarFiltroObras();
+  cerrarModalEditarObra();
 }
 
 function usarMiUbicacion() {
@@ -315,7 +355,15 @@ function renderTabla(datos) {
       <td>${reconocimiento}</td>
       <td>${badgeVerificacion(r)}</td>
       <td class="nowrap"><a href="${mapsUrl}" target="_blank" rel="noopener"><i data-lucide="map-pin"></i> Ver mapa</a></td>
-      <td><button class="btn-del" onclick="eliminar(${r.id})">✕</button></td>
+      <td>
+        <div class="kebab-wrap">
+          <button class="kebab-btn" onclick="toggleKebab(this)">⋯</button>
+          <div class="kebab-menu">
+            <button onclick="abrirModalEditarRegistro(${r.id});cerrarKebabs()"><i data-lucide="pencil"></i> Editar</button>
+            <button class="danger" onclick="eliminar(${r.id});cerrarKebabs()"><i data-lucide="trash-2"></i> Eliminar</button>
+          </div>
+        </div>
+      </td>
     `;
     tbody.appendChild(tr);
   });
@@ -365,11 +413,16 @@ function renderListaPorObra(datos) {
     }).join("");
 
     bloque.innerHTML = `
-      <div class="empleado-header">
-        <span>🏗 ${obraNombre}</span>
-        <span class="badge">${registros.length} registro${registros.length !== 1 ? "s" : ""}</span>
+      <div class="empleado-header" onclick="toggleBloque(this)">
+        <span style="display:flex;align-items:center;gap:8px"><i data-lucide="hard-hat" style="width:16px;height:16px"></i> ${obraNombre}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="badge">${registros.length} registro${registros.length !== 1 ? "s" : ""}</span>
+          <i data-lucide="chevron-down" class="bloque-chevron"></i>
+        </div>
       </div>
-      ${filas}
+      <div class="bloque-body">
+        ${filas}
+      </div>
     `;
     contenedor.appendChild(bloque);
   });
@@ -426,10 +479,55 @@ async function eliminar(id) {
   const { error } = await db.from("asistencias").delete().eq("id", id);
   if (error) { alert("Error al eliminar."); return; }
 
-  // Si era el único en la página, retroceder una página
   const totalPaginas = Math.ceil((totalRegistros - 1) / POR_PAGINA);
   if (paginaActual > totalPaginas && paginaActual > 1) paginaActual--;
 
+  cargarDatos();
+}
+
+async function abrirModalEditarRegistro(id) {
+  const { data, error } = await db.from("asistencias").select("*").eq("id", id).single();
+  if (error || !data) { alert("No se pudo cargar el registro."); return; }
+
+  document.getElementById("er-id").value       = data.id;
+  document.getElementById("er-empleado").value = data.empleado || "";
+  document.getElementById("er-tipo").value     = data.tipo     || "ingreso";
+
+  // Poblar select de obras
+  const selLugar = document.getElementById("er-lugar");
+  selLugar.innerHTML = '<option value="">— Sin obra —</option>' +
+    obras.map(o => `<option value="${o.nombre}"${o.nombre === data.lugar ? " selected" : ""}>${o.nombre}</option>`).join("");
+
+  // Convertir a datetime-local (YYYY-MM-DDTHH:MM)
+  const fecha = data.hora ? new Date(data.hora) : new Date();
+  const pad   = n => String(n).padStart(2, "0");
+  document.getElementById("er-hora").value =
+    `${fecha.getFullYear()}-${pad(fecha.getMonth()+1)}-${pad(fecha.getDate())}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
+
+  document.getElementById("modal-editar-registro").style.display = "flex";
+  lucide.createIcons();
+}
+
+function cerrarModalEditarRegistro() {
+  document.getElementById("modal-editar-registro").style.display = "none";
+}
+
+async function guardarEditarRegistro() {
+  const id       = document.getElementById("er-id").value;
+  const empleado = document.getElementById("er-empleado").value.trim();
+  const tipo     = document.getElementById("er-tipo").value;
+  const lugar    = document.getElementById("er-lugar").value;
+  const horaVal  = document.getElementById("er-hora").value;
+
+  if (!empleado) { alert("Ingresá el nombre del asociado."); return; }
+  if (!horaVal)  { alert("Ingresá la fecha y hora."); return; }
+
+  const hora = new Date(horaVal).toISOString();
+
+  const { error } = await db.from("asistencias").update({ empleado, tipo, lugar: lugar || null, hora }).eq("id", id);
+  if (error) { alert("Error al guardar."); return; }
+
+  cerrarModalEditarRegistro();
   cargarDatos();
 }
 
@@ -1020,6 +1118,30 @@ document.getElementById("f-nombre").addEventListener("input", () => {
 });
 
 cargarDatos();
+
+// ── Kebab menu ────────────────────────────────────────────
+
+function toggleKebab(btn) {
+  const menu   = btn.nextElementSibling;
+  const isOpen = menu.classList.contains("open");
+  cerrarKebabs();
+  if (!isOpen) menu.classList.add("open");
+}
+
+function cerrarKebabs() {
+  document.querySelectorAll(".kebab-menu.open").forEach(m => m.classList.remove("open"));
+}
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".kebab-wrap")) cerrarKebabs();
+});
+
+// ── Acordeón por obra ─────────────────────────────────────
+
+function toggleBloque(header) {
+  header.classList.toggle("collapsed");
+  header.nextElementSibling.classList.toggle("collapsed");
+}
 
 // ── Refresco automático ──────────────────────────────────
 setInterval(cargarDatos, 60000); // Refrescar cada 60 segundos

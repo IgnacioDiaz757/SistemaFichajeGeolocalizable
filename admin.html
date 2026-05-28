@@ -178,10 +178,18 @@
     .card-stat.stat-salida  { border-color: #c62828; }
 
     .stat-ico {
-      font-size: 26px;
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
-      opacity: 0.85;
     }
+    .stat-ico i { width: 22px; height: 22px; }
+    .stat-total   .stat-ico { background: rgba(126,87,194,0.13); color: #7e57c2; }
+    .stat-ingreso .stat-ico { background: rgba(46,125,50,0.13);  color: #2e7d32; }
+    .stat-salida  .stat-ico { background: rgba(198,40,40,0.13);  color: #c62828; }
 
     .stat-body { display: flex; flex-direction: column; }
     .numero {
@@ -225,8 +233,8 @@
       color: #fff;
     }
 
-    .config-header.obras-hdr      { background: var(--zone-bg); }
-    .config-header.contratistas-hdr { background: var(--zone-ct); }
+    .config-header.obras-hdr        { background: var(--primary); }
+    .config-header.contratistas-hdr { background: var(--primary-mid); }
 
     .config-header .btn-gris {
       font-size: 12px;
@@ -568,6 +576,63 @@
       color: #c62828;
     }
 
+    /* ── Kebab menu ──────────────────────────────────────── */
+    .kebab-wrap { position: relative; display: inline-flex; }
+
+    .kebab-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 1px 8px;
+      line-height: 1;
+      letter-spacing: 1px;
+      transition: background 0.12s, color 0.12s;
+    }
+    .kebab-btn:hover { background: var(--border-lt); color: var(--text); }
+
+    .kebab-menu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 4px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      display: none;
+      z-index: 50;
+      min-width: 130px;
+      overflow: hidden;
+    }
+    .kebab-menu.open { display: block; }
+
+    .kebab-menu button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .kebab-menu button:hover { background: var(--row-hover); }
+    .kebab-menu button.danger { color: var(--danger); }
+    .kebab-menu button.danger:hover { background: var(--danger-lt); }
+
+    /* ── Acordeón por obra ───────────────────────────────── */
+    .empleado-header { cursor: pointer; user-select: none; }
+    .empleado-header:hover { filter: brightness(1.08); }
+    .bloque-chevron { transition: transform 0.25s; width: 16px; height: 16px; flex-shrink: 0; }
+    .empleado-header.collapsed .bloque-chevron { transform: rotate(-90deg); }
+    .bloque-body.collapsed { display: none; }
+
     /* ── Lightbox ────────────────────────────────────────── */
     #lightbox {
       display: none;
@@ -786,7 +851,7 @@
       .config-section { border-radius: 8px; }
 
       .filtros { gap: 8px; }
-      .filtros input { width: 100%; padding: 6px 10px; font-size: 12px; }
+      .filtros input, .filtros select { width: 100%; padding: 6px 10px; font-size: 12px; }
       .filtros .btn, .btn-outline-gris { width: 100%; font-size: 12px; }
 
       .tabla-wrap { display: none; }
@@ -879,7 +944,7 @@
         gap: 10px;
         flex-wrap: wrap;
       }
-      .filtros input { width: 100%; }
+      .filtros input, .filtros select { width: 100%; }
       .filtros .btn, .btn-outline-gris { width: 100%; }
 
       .tabla-wrap { display: none; }
@@ -959,11 +1024,11 @@
         gap: 12px;
         flex-wrap: wrap;
       }
-      .filtros input { 
+      .filtros input, .filtros select {
         width: 200px;
         padding: 8px 12px;
       }
-      .filtros .btn, .btn-outline-gris { 
+      .filtros .btn, .btn-outline-gris {
         width: auto;
         padding: 8px 16px;
       }
@@ -1059,13 +1124,13 @@
       .filtros { 
         gap: 14px;
       }
-      .filtros input { 
+      .filtros input, .filtros select {
         width: 200px;
         padding: 9px 13px;
         font-size: 14px;
         transition: border-color 0.2s, box-shadow 0.2s;
       }
-      .filtros input:hover {
+      .filtros input:hover, .filtros select:hover {
         border-color: var(--blue);
       }
       .filtros .btn, .btn-outline-gris { 
@@ -1245,14 +1310,14 @@
         </div>
       </div>
       <div class="card-stat stat-ingreso">
-        <div class="stat-ico">▲</div>
+        <div class="stat-ico"><i data-lucide="log-in"></i></div>
         <div class="stat-body">
           <div class="numero verde" id="cnt-ingresos">—</div>
           <div class="label">Ingresos</div>
         </div>
       </div>
       <div class="card-stat stat-salida">
-        <div class="stat-ico">▼</div>
+        <div class="stat-ico"><i data-lucide="log-out"></i></div>
         <div class="stat-body">
           <div class="numero rojo" id="cnt-salidas">—</div>
           <div class="label">Salidas</div>
@@ -1291,7 +1356,7 @@
             <input type="number" id="z-radio" value="200">
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-gris" style="background:var(--zone-bg)" onclick="usarMiUbicacion()"><i data-lucide="map-pin"></i> Mi ubicación</button>
+            <button class="btn btn-gris" onclick="usarMiUbicacion()"><i data-lucide="map-pin"></i> Mi ubicación</button>
             <button class="btn btn-verde" onclick="agregarObra()">Guardar</button>
           </div>
         </div>
@@ -1430,6 +1495,79 @@
         <button class="btn-cancel" onclick="cerrarModalPlanilla()">Cancelar</button>
         <button class="btn btn-gris" onclick="generarPlanillaEjemplo()" title="Descarga una planilla con datos de ejemplo para ver el modelo">📄 Ver modelo</button>
         <button class="btn btn-verde" onclick="generarPlanilla()">⬇ Descargar Excel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Obra -->
+  <div id="modal-editar-obra" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <i data-lucide="pencil" style="width:24px;height:24px"></i>
+        <h2>Editar Obra</h2>
+      </div>
+      <input type="hidden" id="eo-id">
+      <div class="modal-field">
+        <label>Nombre</label>
+        <input type="text" id="eo-nombre" placeholder="Ej: Obra Central">
+      </div>
+      <div class="modal-field">
+        <label>Encargado</label>
+        <input type="text" id="eo-encargado" placeholder="Ej: Juan Pérez">
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>Latitud</label>
+          <input type="number" id="eo-lat" placeholder="-34.603722" step="any">
+        </div>
+        <div class="modal-field">
+          <label>Longitud</label>
+          <input type="number" id="eo-lng" placeholder="-58.381592" step="any">
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Radio (metros)</label>
+        <input type="number" id="eo-radio" value="200">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="cerrarModalEditarObra()">Cancelar</button>
+        <button class="btn btn-verde" onclick="guardarEditarObra()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Editar Registro -->
+  <div id="modal-editar-registro" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <i data-lucide="pencil" style="width:24px;height:24px"></i>
+        <h2>Editar Registro</h2>
+      </div>
+      <input type="hidden" id="er-id">
+      <div class="modal-field">
+        <label>Asociado</label>
+        <input type="text" id="er-empleado">
+      </div>
+      <div class="modal-row">
+        <div class="modal-field">
+          <label>Tipo</label>
+          <select id="er-tipo">
+            <option value="ingreso">Ingreso</option>
+            <option value="salida">Salida</option>
+          </select>
+        </div>
+        <div class="modal-field">
+          <label>Obra</label>
+          <select id="er-lugar"></select>
+        </div>
+      </div>
+      <div class="modal-field">
+        <label>Fecha y hora</label>
+        <input type="datetime-local" id="er-hora">
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="cerrarModalEditarRegistro()">Cancelar</button>
+        <button class="btn btn-verde" onclick="guardarEditarRegistro()">Guardar cambios</button>
       </div>
     </div>
   </div>
