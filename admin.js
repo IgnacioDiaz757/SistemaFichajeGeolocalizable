@@ -1022,4 +1022,4 @@ document.getElementById("f-nombre").addEventListener("input", () => {
 cargarDatos();
 
 // ── Refresco automático ──────────────────────────────────
-setInterval(cargarDatos, 5000); // Refrescar cada 5 segundos
+setInterval(cargarDatos, 60000); // Refrescar cada 60 segundos
