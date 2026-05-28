@@ -15,6 +15,15 @@ async function cargarObras() {
   const { data, error } = await db.from("obras").select("*").order("nombre");
   if (!error) obras = data || [];
   renderGestionObras();
+  poblarFiltroObras();
+}
+
+function poblarFiltroObras() {
+  const sel = document.getElementById("f-obra");
+  if (!sel) return;
+  const valorActual = sel.value;
+  sel.innerHTML = '<option value="">Todas las obras</option>' +
+    obras.map(o => `<option value="${o.nombre}"${o.nombre === valorActual ? " selected" : ""}>${o.nombre}</option>`).join("");
 }
 
 function renderGestionObras() {
@@ -175,13 +184,15 @@ function getFiltros() {
     nombre: document.getElementById("f-nombre").value.trim(),
     desde:  document.getElementById("f-desde").value,
     hasta:  document.getElementById("f-hasta").value,
+    obra:   document.getElementById("f-obra").value.trim(),
   };
 }
 
-function aplicarFiltrosQuery(query, { nombre, desde, hasta }) {
+function aplicarFiltrosQuery(query, { nombre, desde, hasta, obra }) {
   if (nombre) query = query.ilike("empleado", `%${nombre}%`);
   if (desde)  query = query.gte("hora", desde + "T00:00:00");
   if (hasta)  query = query.lte("hora", hasta + "T23:59:59");
+  if (obra)   query = query.eq("lugar", obra);
   return query;
 }
 
@@ -239,6 +250,7 @@ function limpiarFiltros() {
   document.getElementById("f-nombre").value = "";
   document.getElementById("f-desde").value  = "";
   document.getElementById("f-hasta").value  = "";
+  document.getElementById("f-obra").value   = "";
   aplicarFiltros();
 }
 
