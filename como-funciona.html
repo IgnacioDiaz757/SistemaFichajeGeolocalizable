@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cómo funciona — AsistenciaObra</title>
+  <script>if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark");</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg:          #f0f2f5;
+      --surface:     #ffffff;
+      --header-bg:   #1a1a2e;
+      --text:        #1a1a2e;
+      --text-muted:  #6b7280;
+      --text-label:  #9ca3af;
+      --border:      #e5e7eb;
+      --border-lt:   #f3f4f6;
+      --input-bg:    #ffffff;
+      --accent:      #1565c0;
+      --accent-light:#e3f2fd;
+      --green:       #2e7d32;
+      --green-light: #e8f5e9;
+    }
+    [data-theme="dark"] {
+      --bg:          #0e1117;
+      --surface:     #1a1f2e;
+      --header-bg:   #080b12;
+      --text:        #e0e0e8;
+      --text-muted:  #9ca3af;
+      --text-label:  #6b7280;
+      --border:      #2d3748;
+      --border-lt:   #1e2433;
+      --input-bg:    #111827;
+      --accent-light:rgba(21,101,192,0.15);
+      --green-light: rgba(46,125,50,0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+
+    /* ── Header ─────────────────────────────────────── */
+    header {
+      background: var(--header-bg); color: #fff;
+      padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    header h1 { font-size: 16px; font-weight: 700; }
+    .btn-back {
+      background: rgba(255,255,255,0.12);
+      color: #fff; border: none;
+      border-radius: 7px; padding: 8px 14px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-back:hover { background: rgba(255,255,255,0.22); }
+
+    /* ── Layout ─────────────────────────────────────── */
+    .page { max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; }
+
+    /* ── Hero ───────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
+      border-radius: 18px;
+      padding: 52px 40px;
+      text-align: center;
+      color: #fff;
+      margin-bottom: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: ''; position: absolute;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      top: -120px; right: -80px;
+    }
+    .hero::after {
+      content: ''; position: absolute;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: rgba(255,255,255,0.03);
+      bottom: -60px; left: -40px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 20px; padding: 5px 15px;
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.4px; margin-bottom: 18px;
+    }
+    .hero h2 { font-size: 30px; font-weight: 800; margin-bottom: 14px; line-height: 1.2; }
+    .hero p { font-size: 15px; color: rgba(255,255,255,0.72); max-width: 540px; margin: 0 auto; line-height: 1.65; }
+    .hero-chips {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 22px;
+    }
+    .hero-chip {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 5px 14px; font-size: 12px; color: rgba(255,255,255,0.85);
+      display: flex; align-items: center; gap: 5px;
+    }
+
+    /* ── Section ────────────────────────────────────── */
+    .section { margin-bottom: 44px; }
+    .section-title {
+      font-size: 19px; font-weight: 700;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title .s-icon {
+      width: 36px; height: 36px;
+      background: var(--accent-light);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--accent); flex-shrink: 0;
+    }
+
+    /* ── Roles ──────────────────────────────────────── */
+    .roles-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    @media (max-width: 600px) { .roles-grid { grid-template-columns: 1fr; } }
+    .role-card {
+      background: var(--surface); border-radius: 14px;
+      padding: 22px; border: 1px solid var(--border);
+      box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+    }
+    .role-head { display: flex; align-items: center; gap: 13px; margin-bottom: 16px; }
+    .role-icon {
+      width: 46px; height: 46px; border-radius: 13px;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .ri-blue { background: var(--accent-light); color: var(--accent); }
+    .ri-green { background: var(--green-light); color: var(--green); }
+    .role-name { font-size: 15px; font-weight: 700; }
+    .role-sub  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .role-list { list-style: none; }
+    .role-list li {
+      display: flex; align-items: flex-start; gap: 9px;
+      font-size: 13px; color: var(--text-muted);
+      padding: 6px 0; border-bottom: 1px solid var(--border-lt);
+    }
+    .role-list li:last-child { border-bottom: none; }
+    .role-list li .ck { color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; font-size: 12px; }
+
+    /* ── Steps ──────────────────────────────────────── */
+    .steps-row {
+      display: flex; gap: 0; align-items: stretch;
+    }
+    @media (max-width: 680px) {
+      .steps-row { flex-direction: column; gap: 10px; }
+      .step-sep { display: none; }
+    }
+    .step-box {
+      flex: 1; background: var(--surface);
+      border-radius: 12px; padding: 20px 16px;
+      border: 1px solid var(--border); text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .step-num {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 15px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 11px;
+    }
+    .step-ico {
+      width: 46px; height: 46px;
+      background: var(--accent-light); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 11px; color: var(--accent);
+    }
+    .step-box h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .step-box p  { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+    .step-sep {
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 4px; color: var(--text-muted); flex-shrink: 0;
+    }
+
+    /* ── Two-col ────────────────────────────────────── */
+    .two-col {
+      display: grid; grid-template-columns: auto 1fr; gap: 32px; align-items: start;
+    }
+    @media (max-width: 640px) {
+      .two-col { grid-template-columns: 1fr; }
+      .phone-wrap { display: flex; justify-content: center; }
+    }
+
+    /* ── Phone mockup ───────────────────────────────── */
+    .phone {
+      width: 196px; min-width: 196px;
+      background: #1a1a2e; border-radius: 34px;
+      padding: 14px 9px 18px;
+      box-shadow: 0 28px 64px rgba(0,0,0,0.32), 0 0 0 2px #2d3748;
+      position: relative;
+    }
+    .phone::before {
+      content: '';
+      position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
+      width: 48px; height: 5px; background: #2d3748; border-radius: 3px;
+    }
+    .phone-screen {
+      background: #f0f2f5; border-radius: 26px;
+      overflow: hidden; padding-top: 8px;
+    }
+    [data-theme="dark"] .phone-screen { background: #0e1117; }
+    .ph-header {
+      background: #1a1a2e; color: #fff;
+      padding: 7px 12px; font-size: 9px; font-weight: 700;
+    }
+    .ph-body { padding: 9px; }
+    .viewfinder {
+      background: #111; border-radius: 8px;
+      height: 114px; margin-bottom: 9px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .vf-face {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      border: 2px solid rgba(76,175,80,0.85);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .vf-corner {
+      position: absolute; inset: 7px;
+    }
+    .vf-corner::before, .vf-corner::after {
+      content: ''; position: absolute;
+      width: 14px; height: 14px;
+      border-color: rgba(76,175,80,0.9); border-style: solid;
+    }
+    .vf-corner::before { top:0; left:0; border-width:2px 0 0 2px; border-radius: 2px 0 0 0; }
+    .vf-corner::after  { bottom:0; right:0; border-width:0 2px 2px 0; border-radius: 0 0 2px 0; }
+    .ph-nametag {
+      background: #e8f5e9; border-radius: 6px;
+      padding: 5px 8px; font-size: 9px; font-weight: 700;
+      color: #2e7d32; text-align: center; margin-bottom: 8px;
+    }
+    [data-theme="dark"] .ph-nametag { background: rgba(46,125,50,0.22); }
+    .ph-btns {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 7px;
+    }
+    .ph-btn {
+      border-radius: 6px; padding: 7px 4px;
+      font-size: 9px; font-weight: 700; text-align: center;
+    }
+    .ph-btn.ing { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+    .ph-btn.sal { background: #fce4ec; color: #c62828; border: 2px solid #ef9a9a; opacity: 0.6; }
+    .ph-confirm {
+      background: #2e7d32; color: #fff;
+      border-radius: 6px; padding: 8px;
+      font-size: 9px; font-weight: 700; text-align: center;
+    }
+    .ph-gps {
+      margin-top: 7px; border-radius: 6px;
+      background: rgba(21,101,192,0.1); border: 1px solid rgba(21,101,192,0.2);
+      padding: 5px 7px; font-size: 8px; color: #1565c0;
+      display: flex; align-items: center; gap: 4px; font-weight: 600;
+    }
+
+    /* ── Feature list ───────────────────────────────── */
+    .feat-list { list-style: none; }
+    .feat-list li {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border-lt);
+      font-size: 14px;
+    }
+    .feat-list li:last-child { border-bottom: none; }
+    .fi { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .fi-b { background: var(--accent-light); color: var(--accent); }
+    .fi-g { background: var(--green-light); color: var(--green); }
+    .fi-o { background: #fff3e0; color: #e65100; }
+    .fi-p { background: #f3e5f5; color: #7b1fa2; }
+    [data-theme="dark"] .fi-o { background: rgba(230,81,0,0.15); color: #fb8c00; }
+    [data-theme="dark"] .fi-p { background: rgba(123,31,162,0.15); color: #ce93d8; }
+    .feat-label { display: block; font-size: 14px; font-weight: 600; }
+    .feat-desc  { font-size: 13px; color: var(--text-muted); }
+
+    /* ── Admin mockup ───────────────────────────────── */
+    .admin-mock {
+      background: var(--surface); border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+      margin-bottom: 20px;
+    }
+    .am-bar {
+      background: #1a1a2e; padding: 10px 16px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .am-dot { width: 9px; height: 9px; border-radius: 50%; }
+    .am-bar .am-title { font-size: 11px; color: rgba(255,255,255,0.45); margin-left: auto; }
+    .am-stats {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 560px) { .am-stats { grid-template-columns: repeat(2,1fr); } }
+    .am-stat {
+      padding: 14px 12px; text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .am-stat:last-child { border-right: none; }
+    .am-num   { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .am-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .am-thead {
+      display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+      padding: 8px 16px; gap: 8px;
+      background: var(--border-lt);
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .am-row {
+      display: grid; grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+      padding: 10px 16px; gap: 8px; font-size: 12px;
+      border-bottom: 1px solid var(--border-lt);
+      align-items: center; color: var(--text);
+    }
+    .am-row:last-child { border-bottom: none; }
+    .am-muted { color: var(--text-muted); }
+    .badge-i { background:#e8f5e9; color:#2e7d32; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; display:inline-block; }
+    .badge-s { background:#fce4ec; color:#c62828; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; display:inline-block; }
+    [data-theme="dark"] .badge-i { background:rgba(46,125,50,0.2); }
+    [data-theme="dark"] .badge-s { background:rgba(198,40,40,0.2); }
+    .gps-ok { color: #2e7d32; font-size: 11px; font-weight: 600; }
+
+    /* ── Facial steps ───────────────────────────────── */
+    .face-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+    @media (max-width: 580px) { .face-grid { grid-template-columns: 1fr; } }
+    .face-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 16px; text-align: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .face-num {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 12px;
+    }
+    .face-emoji { font-size: 36px; margin-bottom: 10px; }
+    .face-card h3 { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .face-card p  { font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+    /* ── Planilla card ──────────────────────────────── */
+    .planilla-row {
+      display: flex; align-items: flex-start; gap: 18px;
+      background: var(--surface); border-radius: 14px;
+      padding: 22px; border: 1px solid var(--border);
+      box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+    }
+    .planilla-ico {
+      width: 54px; height: 54px;
+      background: var(--green-light);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--green);
+    }
+    .planilla-row h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+    .planilla-row p  { font-size: 13px; color: var(--text-muted); line-height: 1.65; }
+
+    /* ── Card wrapper ───────────────────────────────── */
+    .card {
+      background: var(--surface); border-radius: 14px;
+      border: 1px solid var(--border); padding: 24px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+    }
+
+    /* ── Responsive ─────────────────────────────────── */
+    @media (max-width: 480px) {
+      .hero { padding: 36px 20px; }
+      .hero h2 { font-size: 22px; }
+      .page { padding: 20px 14px 48px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Cómo funciona el sistema</h1>
+  <a href="admin.html" class="btn-back">
+    <i data-lucide="arrow-left" style="width:14px;height:14px"></i> Volver al panel
+  </a>
+</header>
+
+<div class="page">
+
+  <!-- ── Hero ──────────────────────────────────────── -->
+  <div class="hero">
+    <div class="hero-badge">
+      <i data-lucide="book-open" style="width:13px;height:13px"></i>
+      Guía del sistema
+    </div>
+    <h2>Asistencia Obra Geolocalizable</h2>
+    <p>Sistema de control de asistencia para obras de construcción con reconocimiento facial, geolocalización GPS y generación automática de planillas.</p>
+    <div class="hero-chips">
+      <span class="hero-chip"><i data-lucide="scan-face" style="width:12px;height:12px"></i> Reconocimiento facial</span>
+      <span class="hero-chip"><i data-lucide="map-pin" style="width:12px;height:12px"></i> Geolocalización</span>
+      <span class="hero-chip"><i data-lucide="file-spreadsheet" style="width:12px;height:12px"></i> Planillas automáticas</span>
+      <span class="hero-chip"><i data-lucide="cloud" style="width:12px;height:12px"></i> Datos en la nube</span>
+    </div>
+  </div>
+
+  <!-- ── Roles ─────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">
+      <div class="s-icon"><i data-lucide="users" style="width:18px;height:18px"></i></div>
+      Roles del sistema
+    </div>
+    <div class="roles-grid">
+      <div class="role-card">
+        <div class="role-head">
+          <div class="role-icon ri-green"><i data-lucide="hard-hat" style="width:22px;height:22px"></i></div>
+          <div>
+            <div class="role-name">Empleado / Asociado</div>
+            <div class="role-sub">Trabajador en la obra</div>
+          </div>
+        </div>
+        <ul class="role-list">
+          <li><span class="ck">✓</span>Accede desde su celular con la URL de la obra</li>
+          <li><span class="ck">✓</span>Se identifica mediante reconocimiento facial</li>
+          <li><span class="ck">✓</span>Selecciona si está marcando Ingreso o Salida</li>
+          <li><span class="ck">✓</span>El sistema verifica que está dentro del radio de la obra</li>
+          <li><span class="ck">✓</span>Confirma el registro con un solo botón</li>
+        </ul>
+      </div>
+      <div class="role-card">
+        <div class="role-head">
+          <div class="role-icon ri-blue"><i data-lucide="shield-check" style="width:22px;height:22px"></i></div>
+          <div>
+            <div class="role-name">Administrador</div>
+            <div class="role-sub">Encargado / Supervisor</div>
+          </div>
+        </div>
+        <ul class="role-list">
+          <li><span class="ck">✓</span>Gestiona obras, empresas y empleados</li>
+          <li><span class="ck">✓</span>Registra las caras de los asociados</li>
+          <li><span class="ck">✓</span>Ve todos los registros en tiempo real</li>
+          <li><span class="ck">✓</span>Filtra por fecha, obra, empleado o empresa</li>
+          <li><span class="ck">✓</span>Genera planillas Excel automáticamente</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Flujo de marcación ─────────────────────────── -->
+  <div class="section">
+    <div class="section-title">
+      <div class="s-icon"><i data-lucide="git-branch" style="width:18px;height:18px"></i></div>
+      Flujo de marcación — paso a paso
+    </div>
+
+    <div class="steps-row" style="margin-bottom:20px">
+      <div class="step-box">
+        <div class="step-num">1</div>
+        <div class="step-ico"><i data-lucide="smartphone" style="width:22px;height:22px"></i></div>
+        <h3>Abre la app</h3>
+        <p>El empleado abre la URL del sistema desde el navegador de su celular</p>
+      </div>
+      <div class="step-sep"><i data-lucide="chevron-right" style="width:20px;height:20px"></i></div>
+      <div class="step-box">
+        <div class="step-num">2</div>
+        <div class="step-ico"><i data-lucide="scan-face" style="width:22px;height:22px"></i></div>
+        <h3>Reconocimiento facial</h3>
+        <p>La cámara detecta su cara y lo identifica automáticamente con IA</p>
+      </div>
+      <div class="step-sep"><i data-lucide="chevron-right" style="width:20px;height:20px"></i></div>
+      <div class="step-box">
+        <div class="step-num">3</div>
+        <div class="step-ico"><i data-lucide="map-pin" style="width:22px;height:22px"></i></div>
+        <h3>Verificación GPS</h3>
+        <p>Se confirma que el empleado está dentro del radio autorizado de la obra</p>
+      </div>
+      <div class="step-sep"><i data-lucide="chevron-right" style="width:20px;height:20px"></i></div>
+      <div class="step-box">
+        <div class="step-num">4</div>
+        <div class="step-ico"><i data-lucide="check-circle" style="width:22px;height:22px"></i></div>
+        <h3>Registro guardado</h3>
+        <p>El ingreso o salida queda registrado con foto, hora y coordenadas exactas</p>
+      </div>
+    </div>
+
+    <!-- Phone mockup + feature list -->
+    <div class="card">
+      <div class="two-col">
+        <div class="phone-wrap">
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="ph-header">🏗 AsistenciaObra</div>
+              <div class="ph-body">
+                <div class="viewfinder">
+                  <div class="vf-corner"></div>
+                  <div class="vf-face">👤</div>
+                </div>
+                <div class="ph-nametag">✓ Juan Pérez — identificado</div>
+                <div class="ph-btns">
+                  <div class="ph-btn ing">↑ INGRESO</div>
+                  <div class="ph-btn sal">↓ SALIDA</div>
+                </div>
+                <div class="ph-confirm">Confirmar ingreso</div>
+                <div class="ph-gps">
+                  <i data-lucide="map-pin" style="width:9px;height:9px"></i>
+                  Ubicación verificada — Obra Norte
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">Pantalla de marcación del empleado</h3>
+          <ul class="feat-list">
+            <li>
+              <div class="fi fi-b"><i data-lucide="camera" style="width:16px;height:16px"></i></div>
+              <div>
+                <span class="feat-label">Cámara automática con IA</span>
+                <span class="feat-desc">Face-API.js detecta y reconoce la cara en tiempo real sin necesidad de instalar nada</span>
+              </div>
+            </li>
+            <li>
+              <div class="fi fi-g"><i data-lucide="user-check" style="width:16px;height:16px"></i></div>
+              <div>
+                <span class="feat-label">Identificación instantánea</span>
+                <span class="feat-desc">El nombre aparece automáticamente ni bien se detecta la cara registrada</span>
+              </div>
+            </li>
+            <li>
+              <div class="fi fi-o"><i data-lucide="toggle-left" style="width:16px;height:16px"></i></div>
+              <div>
+                <span class="feat-label">Selección de tipo</span>
+                <span class="feat-desc">El empleado elige Ingreso o Salida antes de confirmar, evitando errores</span>
+              </div>
+            </li>
+            <li>
+              <div class="fi fi-p"><i data-lucide="map-pin-check" style="width:16px;height:16px"></i></div>
+              <div>
+                <span class="feat-label">Geofencing por obra</span>
+                <span class="feat-desc">Cada obra tiene coordenadas y radio configurados; solo se puede marcar estando dentro del perímetro</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Panel admin ───────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">
+      <div class="s-icon"><i data-lucide="layout-dashboard" style="width:18px;height:18px"></i></div>
+      Panel de administración
+    </div>
+
+    <!-- Mockup del panel -->
+    <div class="admin-mock">
+      <div class="am-bar">
+        <div class="am-dot" style="background:#ef4444"></div>
+        <div class="am-dot" style="background:#f59e0b"></div>
+        <div class="am-dot" style="background:#22c55e"></div>
+        <span class="am-title">Panel de administración — AsistenciaObra</span>
+      </div>
+      <div class="am-stats">
+        <div class="am-stat">
+          <div class="am-num">24</div>
+          <div class="am-label">Registros hoy</div>
+        </div>
+        <div class="am-stat">
+          <div class="am-num">8</div>
+          <div class="am-label">Empleados activos</div>
+        </div>
+        <div class="am-stat">
+          <div class="am-num">3</div>
+          <div class="am-label">Obras activas</div>
+        </div>
+        <div class="am-stat">
+          <div class="am-num">12</div>
+          <div class="am-label">Ingresos hoy</div>
+        </div>
+      </div>
+      <div class="am-thead">
+        <span>Empleado</span><span>Obra</span><span>Hora</span><span>Tipo</span><span>GPS</span>
+      </div>
+      <div class="am-row">
+        <span>Juan Pérez</span>
+        <span class="am-muted">Obra Norte</span>
+        <span>08:32</span>
+        <span><span class="badge-i">Ingreso</span></span>
+        <span class="gps-ok">✓ En zona</span>
+      </div>
+      <div class="am-row">
+        <span>Ana García</span>
+        <span class="am-muted">Obra Sur</span>
+        <span>08:47</span>
+        <span><span class="badge-i">Ingreso</span></span>
+        <span class="gps-ok">✓ En zona</span>
+      </div>
+      <div class="am-row">
+        <span>Carlos López</span>
+        <span class="am-muted">Obra Norte</span>
+        <span>17:05</span>
+        <span><span class="badge-s">Salida</span></span>
+        <span class="gps-ok">✓ En zona</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <ul class="feat-list">
+        <li>
+          <div class="fi fi-b"><i data-lucide="filter" style="width:16px;height:16px"></i></div>
+          <div>
+            <span class="feat-label">Filtros avanzados</span>
+            <span class="feat-desc">Filtrá los registros por rango de fechas, obra, tipo de marcación (ingreso/salida) o empleado</span>
+          </div>
+        </li>
+        <li>
+          <div class="fi fi-g"><i data-lucide="pencil" style="width:16px;height:16px"></i></div>
+          <div>
+            <span class="feat-label">Edición de registros</span>
+            <span class="feat-desc">Cualquier registro puede corregirse: hora, tipo, empleado u obra asignada, directamente desde el panel</span>
+          </div>
+        </li>
+        <li>
+          <div class="fi fi-o"><i data-lucide="building-2" style="width:16px;height:16px"></i></div>
+          <div>
+            <span class="feat-label">Gestión de obras y empresas</span>
+            <span class="feat-desc">Creá y editá obras con dirección, coordenadas GPS y radio de geofencing; administrá también las empresas contratistas</span>
+          </div>
+        </li>
+        <li>
+          <div class="fi fi-p"><i data-lucide="refresh-cw" style="width:16px;height:16px"></i></div>
+          <div>
+            <span class="feat-label">Actualización automática</span>
+            <span class="feat-desc">El panel se refresca automáticamente cada 60 segundos para mostrar los registros más recientes sin recargar la página</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── Registro facial ───────────────────────────── -->
+  <div class="section">
+    <div class="section-title">
+      <div class="s-icon"><i data-lucide="scan-face" style="width:18px;height:18px"></i></div>
+      Registro de reconocimiento facial
+    </div>
+    <div class="face-grid">
+      <div class="face-card">
+        <div class="face-num">1</div>
+        <div class="face-emoji">📝</div>
+        <h3>Datos del empleado</h3>
+        <p>Ingresá nombre, puesto, obra asignada y empresa contratista del asociado antes de registrar</p>
+      </div>
+      <div class="face-card">
+        <div class="face-num">2</div>
+        <div class="face-emoji">📸</div>
+        <h3>3 fotos desde distintos ángulos</h3>
+        <p>Se capturan 3 imágenes girando levemente la cabeza para mejorar la precisión del reconocimiento</p>
+      </div>
+      <div class="face-card">
+        <div class="face-num">3</div>
+        <div class="face-emoji">🧠</div>
+        <h3>Guardado en la nube</h3>
+        <p>Los descriptores biométricos se almacenan en Supabase y el empleado ya puede ser reconocido al instante</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Planillas ─────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">
+      <div class="s-icon"><i data-lucide="file-spreadsheet" style="width:18px;height:18px"></i></div>
+      Generación de planillas
+    </div>
+    <div class="planilla-row">
+      <div class="planilla-ico">
+        <i data-lucide="file-spreadsheet" style="width:26px;height:26px"></i>
+      </div>
+      <div>
+        <h3>Planilla Excel automática</h3>
+        <p>
+          Desde el panel de administración podés generar una planilla <strong>.xlsx</strong> con los registros de asistencia
+          de un período a elección. La planilla incluye nombre del empleado, obra, empresa, horarios de ingreso y salida
+          por día, horas trabajadas y totales. Ideal para liquidación de sueldos o presentación ante la cooperativa.
+          También podés consultar el historial de planillas generadas anteriormente.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  if (sessionStorage.getItem("admin_auth") !== "ok") window.location.replace("login.html");
+</script>
+<script src="config.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (window.lucide) lucide.createIcons();
+  });
+</script>
+</body>
+</html>
