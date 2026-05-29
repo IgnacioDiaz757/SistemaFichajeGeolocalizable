@@ -706,7 +706,15 @@
 
     <!-- Lista asociados registrados -->
     <div class="seccion">
-      <h2>Asociados con reconocimiento facial</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <h2 style="margin:0">Asociados con reconocimiento facial</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label for="filtro-obra" style="font-size:12px;color:var(--text-muted);white-space:nowrap">Filtrar por obra:</label>
+          <select id="filtro-obra" onchange="filtrarPorObra()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--input-bg);color:var(--text)">
+            <option value="">Todas</option>
+          </select>
+        </div>
+      </div>
       <div id="lista-asociados">
         <p style="color:#999;font-size:13px">Cargando...</p>
       </div>

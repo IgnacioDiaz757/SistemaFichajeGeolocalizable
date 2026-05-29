@@ -41,9 +41,65 @@ async function cargarEmpleados() {
     return;
   }
 
+  todosEmpleados = data;
+  poblarFiltroObra(data);
+  filtrarPorObra();
+}
+
+function poblarFiltroObra(data) {
+  const sel = document.getElementById("filtro-obra");
+  const valorActual = sel.value;
+
+  const conteos = {};
+  data.forEach(e => {
+    const k = e.obra || "";
+    conteos[k] = (conteos[k] || 0) + 1;
+  });
+
+  const obras = Object.keys(conteos)
+    .filter(o => o !== "")
+    .sort((a, b) => a.localeCompare(b, "es"));
+
+  sel.innerHTML = `<option value="">Todas (${data.length})</option>`;
+  obras.forEach(obra => {
+    const opt = document.createElement("option");
+    opt.value = obra;
+    opt.textContent = `${obra} (${conteos[obra]})`;
+    sel.appendChild(opt);
+  });
+
+  const sinObra = conteos[""] || 0;
+  if (sinObra > 0) {
+    const opt = document.createElement("option");
+    opt.value = "__sin_obra__";
+    opt.textContent = `Sin obra asignada (${sinObra})`;
+    sel.appendChild(opt);
+  }
+
+  if (valorActual) sel.value = valorActual;
+}
+
+function filtrarPorObra() {
+  const filtro = document.getElementById("filtro-obra").value;
+  const data = !filtro
+    ? todosEmpleados
+    : todosEmpleados.filter(e =>
+        filtro === "__sin_obra__" ? !e.obra : e.obra === filtro
+      );
+  renderEmpleados(data);
+}
+
+function renderEmpleados(data) {
+  const lista = document.getElementById("lista-asociados");
+
+  if (!data.length) {
+    lista.innerHTML = '<p style="color:#999;font-size:13px">Sin empleados para el filtro seleccionado.</p>';
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
   lista.innerHTML = data.map(e => {
     const sub = [e.puesto, e.obra, e.contratista].filter(Boolean).join(" · ");
-    const obraEsc = (e.obra || "").replace(/'/g, "\\'");
     return `
     <div class="empleado-item" id="emp-item-${e.id}">
       <div style="flex:1;min-width:0">
@@ -58,8 +114,8 @@ async function cargarEmpleados() {
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:flex-start;flex-shrink:0">
-  <button 
-  class="btn-azul btn" 
+  <button
+  class="btn-azul btn"
   style="font-size:12px;padding:5px 10px"
   onclick="abrirModalEditar(
     '${e.id}',
@@ -75,6 +131,8 @@ async function cargarEmpleados() {
       </div>
     </div>`;
   }).join("");
+
+  if (window.lucide) lucide.createIcons();
 }
 
 async function eliminarEmpleado(id, nombre) {
@@ -127,6 +185,7 @@ async function guardarObraEmpleado(id) {
   if (btn) btn.setAttribute("onclick", `abrirEditarObra('${id}', '${(obraNueva || "").replace(/'/g, "\\'")}')`);
 }
 
+let todosEmpleados   = [];
 let empleadoEditando = null;
 
 async function abrirModalEditar(id, nombre, puesto, obra, empresa) {
