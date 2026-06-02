@@ -233,7 +233,11 @@ function renderPanelHistorial() {
       </table>
     </div>
 
-    <div class="seccion-titulo" id="titulo-diario">Asistencia diaria</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:4px;">
+      <span id="titulo-diario" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap;">Asistencia diaria</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+      <button class="btn btn-naranja" style="font-size:12px;padding:5px 11px;flex-shrink:0" onclick="abrirModalSalidaManual()">▼ Salida manual</button>
+    </div>
     <div class="tabla-wrap">
       <table>
         <thead>
@@ -1009,6 +1013,70 @@ function sanitizarNombre(nombre) {
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_\-]/g, "")
     .slice(0, 50);
+}
+
+// ── Salida manual ─────────────────────────────────────────
+function abrirModalSalidaManual() {
+  const emp = empleadoActual;
+  if (!emp) return;
+
+  document.getElementById("sm-emp-info").textContent = `Empleado: ${emp.nombre}`;
+  document.getElementById("sm-fecha").value  = "";
+  document.getElementById("sm-hora-h").value = "";
+  document.getElementById("sm-hora-m").value = "";
+
+  const sel = document.getElementById("sm-obra");
+  sel.innerHTML = '<option value="">— Sin obra —</option>' +
+    obrasLista.map(o =>
+      `<option value="${esc(o.nombre)}"${o.nombre === emp.obra ? " selected" : ""}>${esc(o.nombre)}</option>`
+    ).join("");
+
+  const btn = document.getElementById("btn-confirmar-salida");
+  btn.disabled    = false;
+  btn.textContent = "Registrar salida";
+
+  document.getElementById("modal-salida-manual").style.display = "flex";
+}
+
+function cerrarModalSalidaManual() {
+  document.getElementById("modal-salida-manual").style.display = "none";
+}
+
+async function confirmarSalidaManual() {
+  const fecha  = document.getElementById("sm-fecha").value;
+  const horaH  = document.getElementById("sm-hora-h").value;
+  const horaM  = document.getElementById("sm-hora-m").value;
+  const obra   = document.getElementById("sm-obra").value;
+
+  if (!fecha || !horaH || !horaM) {
+    alert("Completá la fecha, hora y minutos antes de continuar.");
+    return;
+  }
+
+  const btn = document.getElementById("btn-confirmar-salida");
+  btn.disabled    = true;
+  btn.textContent = "Registrando…";
+
+  const horaISO = new Date(`${fecha}T${horaH}:${horaM}:00`).toISOString();
+
+  const { error } = await db.from("asistencias").insert([{
+    empleado:          empleadoActual.nombre,
+    tipo:              "salida",
+    hora:              horaISO,
+    lugar:             obra || null,
+    reconocido_facial: false,
+    foto_url:          null,
+  }]);
+
+  if (error) {
+    btn.disabled    = false;
+    btn.textContent = "Registrar salida";
+    alert("Error al registrar: " + error.message);
+    return;
+  }
+
+  cerrarModalSalidaManual();
+  await seleccionarEmpleado(empleadoActual.id);
 }
 
 // ── Sesión ────────────────────────────────────────────────
