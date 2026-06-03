@@ -236,6 +236,7 @@ function renderPanelHistorial() {
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;margin-top:4px;">
       <span id="titulo-diario" style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px;white-space:nowrap;">Asistencia diaria</span>
       <div style="flex:1;height:1px;background:var(--border)"></div>
+      <button class="btn btn-verde" style="font-size:12px;padding:5px 11px;flex-shrink:0" onclick="abrirModalIngresoManual()">▲ Ingreso manual</button>
       <button class="btn btn-naranja" style="font-size:12px;padding:5px 11px;flex-shrink:0" onclick="abrirModalSalidaManual()">▼ Salida manual</button>
     </div>
     <div class="tabla-wrap">
@@ -1076,6 +1077,70 @@ async function confirmarSalidaManual() {
   }
 
   cerrarModalSalidaManual();
+  await seleccionarEmpleado(empleadoActual.id);
+}
+
+// ── Ingreso manual ────────────────────────────────────────
+function abrirModalIngresoManual() {
+  const emp = empleadoActual;
+  if (!emp) return;
+
+  document.getElementById("im-emp-info").textContent = `Empleado: ${emp.nombre}`;
+  document.getElementById("im-fecha").value  = "";
+  document.getElementById("im-hora-h").value = "";
+  document.getElementById("im-hora-m").value = "";
+
+  const sel = document.getElementById("im-obra");
+  sel.innerHTML = '<option value="">— Sin obra —</option>' +
+    obrasLista.map(o =>
+      `<option value="${esc(o.nombre)}"${o.nombre === emp.obra ? " selected" : ""}>${esc(o.nombre)}</option>`
+    ).join("");
+
+  const btn = document.getElementById("btn-confirmar-ingreso");
+  btn.disabled    = false;
+  btn.textContent = "Registrar ingreso";
+
+  document.getElementById("modal-ingreso-manual").style.display = "flex";
+}
+
+function cerrarModalIngresoManual() {
+  document.getElementById("modal-ingreso-manual").style.display = "none";
+}
+
+async function confirmarIngresoManual() {
+  const fecha  = document.getElementById("im-fecha").value;
+  const horaH  = document.getElementById("im-hora-h").value;
+  const horaM  = document.getElementById("im-hora-m").value;
+  const obra   = document.getElementById("im-obra").value;
+
+  if (!fecha || !horaH || !horaM) {
+    alert("Completá la fecha, hora y minutos antes de continuar.");
+    return;
+  }
+
+  const btn = document.getElementById("btn-confirmar-ingreso");
+  btn.disabled    = true;
+  btn.textContent = "Registrando…";
+
+  const horaISO = new Date(`${fecha}T${horaH}:${horaM}:00`).toISOString();
+
+  const { error } = await db.from("asistencias").insert([{
+    empleado:          empleadoActual.nombre,
+    tipo:              "ingreso",
+    hora:              horaISO,
+    lugar:             obra || null,
+    reconocido_facial: false,
+    foto_url:          null,
+  }]);
+
+  if (error) {
+    btn.disabled    = false;
+    btn.textContent = "Registrar ingreso";
+    alert("Error al registrar: " + error.message);
+    return;
+  }
+
+  cerrarModalIngresoManual();
   await seleccionarEmpleado(empleadoActual.id);
 }
 

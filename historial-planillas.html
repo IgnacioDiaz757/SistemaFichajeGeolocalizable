@@ -162,6 +162,7 @@
     .modal-field input:focus,.modal-field select:focus{outline:none;border-color:var(--blue);}
     .modal-footer{display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border);background:var(--surface2);}
     .tipo-salida-badge{display:inline-flex;align-items:center;gap:5px;background:#ffebee;color:#c62828;border:1px solid #ef9a9a;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;}
+    .tipo-ingreso-badge{display:inline-flex;align-items:center;gap:5px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:8px;vertical-align:middle;}
 
     /* ── Media Queries Responsive ──────────────────────– */
 
@@ -479,6 +480,39 @@
     </div>
   </div>
 
+  <!-- Modal ingreso manual -->
+  <div id="modal-ingreso-manual" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>▲ Registrar ingreso manual <span class="tipo-ingreso-badge">Ingreso</span></h3>
+        <button class="modal-close" onclick="cerrarModalIngresoManual()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-emp-info" id="im-emp-info"></div>
+        <div class="modal-field">
+          <label>Fecha</label>
+          <input type="date" id="im-fecha">
+        </div>
+        <div class="modal-field">
+          <label>Hora (formato 24 hs)</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="im-hora-h" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text);"></select>
+            <span style="font-size:18px;font-weight:700;color:var(--text-muted)">:</span>
+            <select id="im-hora-m" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--input-bg);color:var(--text);"></select>
+          </div>
+        </div>
+        <div class="modal-field">
+          <label>Obra</label>
+          <select id="im-obra"></select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gris" style="background:var(--border);color:var(--text)" onclick="cerrarModalIngresoManual()">Cancelar</button>
+        <button class="btn btn-verde" id="btn-confirmar-ingreso" onclick="confirmarIngresoManual()">Registrar ingreso</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal previsualización Office Online -->
   <div id="modal-preview" class="preview-overlay">
     <div class="preview-container">
@@ -516,6 +550,22 @@
     (function() {
       const hSel = document.getElementById("sm-hora-h");
       const mSel = document.getElementById("sm-hora-m");
+      hSel.innerHTML = '<option value="">Hora</option>';
+      mSel.innerHTML = '<option value="">Min</option>';
+      for (let h = 0; h < 24; h++) {
+        const v = String(h).padStart(2, "0");
+        hSel.innerHTML += `<option value="${v}">${v}</option>`;
+      }
+      for (let m = 0; m < 60; m++) {
+        const v = String(m).padStart(2, "0");
+        mSel.innerHTML += `<option value="${v}">${v}</option>`;
+      }
+    })();
+  </script>
+  <script>
+    (function() {
+      const hSel = document.getElementById("im-hora-h");
+      const mSel = document.getElementById("im-hora-m");
       hSel.innerHTML = '<option value="">Hora</option>';
       mSel.innerHTML = '<option value="">Min</option>';
       for (let h = 0; h < 24; h++) {
