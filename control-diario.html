@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Diario — Asistencia Obra</title>
+  <script>if(localStorage.getItem("theme")==="dark")document.documentElement.setAttribute("data-theme","dark");</script>
+  <style>
+    :root {
+      --primary:#1a1a2e; --accent:#2e7d32; --accent-lt:#e8f5e9;
+      --danger:#c62828; --danger-lt:#ffebee;
+      --blue:#1565c0; --blue-lt:#e3f2fd; --orange:#e65100;
+      --bg:#f0f2f5; --surface:#ffffff; --surface2:#f8fafc;
+      --border:#e2e8f0; --border-lt:#f1f5f9;
+      --text:#1e293b; --text-muted:#64748b; --text-label:#475569;
+      --input-bg:#ffffff;
+      --shadow-sm:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md:0 4px 16px rgba(0,0,0,0.10),0 2px 4px rgba(0,0,0,0.06);
+      --radius:10px; --header-bg:#1a1a2e;
+      --row-hover:#eef2ff;
+    }
+    [data-theme="dark"] {
+      --bg:#0e1117; --surface:#1a1f2e; --surface2:#141921;
+      --header-bg:#080b12;
+      --text:#e0e0e8; --text-muted:#9ca3af; --text-label:#6b7280;
+      --border:#2d3748; --border-lt:#1e2433;
+      --row-hover:#1e2a3a; --input-bg:#111827;
+      --accent-lt:#1b2e1c; --danger-lt:#2a1212; --blue-lt:#101e38;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);transition:background 0.2s,color 0.2s;line-height:1.5;min-height:100vh;}
+
+    /* ── Header ── */
+    header{background:var(--header-bg);color:#fff;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+    .header-brand{display:flex;align-items:center;gap:10px;}
+    .brand-text{display:flex;flex-direction:column;}
+    .brand-name{font-size:15px;font-weight:700;}
+    .brand-sub{font-size:11px;color:rgba(255,255,255,0.55);}
+    .header-actions{display:flex;align-items:center;gap:6px;}
+    .header-sep{width:1px;height:22px;background:rgba(255,255,255,0.18);margin:0 4px;}
+    .btn{padding:7px 13px;border:none;border-radius:7px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:filter 0.15s,transform 0.1s;white-space:nowrap;}
+    .btn:hover{filter:brightness(1.12);}.btn:active{transform:scale(0.97);}
+    .btn-gris{background:rgba(255,255,255,0.14);color:#fff;}
+    .btn-azul{background:#1565c0;color:#fff;}
+    .btn-icon{width:34px;height:34px;padding:0;justify-content:center;font-size:16px;}
+
+    /* ── Contenido ── */
+    .contenido{max-width:900px;margin:0 auto;padding:28px 20px;}
+
+    /* ── Fecha selector ── */
+    .cd-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+    .cd-titulo{font-size:20px;font-weight:700;color:var(--text);}
+    .cd-fecha-row{display:flex;align-items:center;gap:8px;}
+    .cd-fecha-row label{font-size:13px;color:var(--text-muted);}
+    .cd-fecha-row input[type=date]{
+      border:1px solid var(--border);border-radius:7px;
+      padding:7px 12px;font-size:13px;
+      background:var(--input-bg);color:var(--text);
+    }
+    .btn-actualizar{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background 0.15s;}
+    .btn-actualizar:hover{background:var(--row-hover);}
+
+    /* ── Navegación días ── */
+    .cd-nav-dias{display:flex;align-items:center;gap:6px;}
+    .btn-dia{background:var(--surface);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:7px;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background 0.15s;}
+    .btn-dia:hover{background:var(--row-hover);}
+
+    /* ── Cards por obra ── */
+    .cd-grid{display:grid;gap:16px;}
+    .cd-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm);}
+    .cd-card-header{background:var(--primary);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+    .cd-card-nombre{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;}
+    .cd-chips{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+    .cd-chip{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;background:rgba(255,255,255,0.18);color:#fff;}
+    .cd-chip.verde  {background:rgba(46,125,50,0.85);}
+    .cd-chip.rojo   {background:rgba(198,40,40,0.75);}
+    .cd-chip.naranja{background:rgba(230,81,0,0.85);}
+    .cd-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .cd-table th{background:var(--surface2);color:var(--text-label);padding:8px 16px;text-align:left;font-weight:600;font-size:11.5px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.4px;}
+    .cd-table td{padding:9px 16px;border-bottom:1px solid var(--border-lt);vertical-align:middle;}
+    .cd-table tr:last-child td{border-bottom:none;}
+    .cd-table tr:hover td{background:var(--row-hover);}
+    .cd-nombre-col{font-weight:500;}
+    .cd-ok {color:#2e7d32;font-weight:600;}
+    .cd-no {color:var(--text-muted);font-style:italic;}
+    .cd-hora{font-size:12px;color:var(--text-muted);margin-left:5px;font-style:normal;font-weight:400;}
+    .cd-vacio{padding:48px 20px;color:var(--text-muted);font-size:14px;text-align:center;}
+
+    /* ── Resumen global ── */
+    .cd-resumen{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
+    .cd-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 20px;flex:1;min-width:140px;box-shadow:var(--shadow-sm);}
+    .cd-stat-num{font-size:26px;font-weight:700;color:var(--text);}
+    .cd-stat-label{font-size:12px;color:var(--text-muted);margin-top:2px;}
+    .cd-stat.verde .cd-stat-num{color:#2e7d32;}
+    .cd-stat.rojo  .cd-stat-num{color:#c62828;}
+    .cd-stat.naranja .cd-stat-num{color:#e65100;}
+  </style>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="header-brand">
+      <img src="public/images/Copia de Copia de Riveras del sur- Isologo colores.png" alt="Logo" style="height:38px;width:auto;object-fit:contain;border-radius:6px;">
+      <div class="brand-text">
+        <span class="brand-name">Asistencia Obra</span>
+        <span class="brand-sub">Control diario por obra</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-gris btn-icon" id="btn-tema" onclick="toggleTema()" title="Cambiar tema"></button>
+      <div class="header-sep"></div>
+      <button class="btn btn-gris" onclick="window.location.href='admin.html'">← Volver al admin</button>
+    </div>
+  </header>
+
+  <!-- ── Contenido ── -->
+  <div class="contenido">
+
+    <div class="cd-top">
+      <div class="cd-titulo">Control diario por obra</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div class="cd-nav-dias">
+          <button class="btn-dia" onclick="cambiarDia(-1)" title="Día anterior">‹</button>
+          <button class="btn-dia" onclick="cambiarDia(1)" title="Día siguiente">›</button>
+        </div>
+        <div class="cd-fecha-row">
+          <label>Fecha:</label>
+          <input type="date" id="cd-fecha" onchange="cargarControlDiario()">
+        </div>
+        <button class="btn-actualizar" onclick="cargarControlDiario()">
+          <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> Actualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumen global del día -->
+    <div class="cd-resumen">
+      <div class="cd-stat verde">
+        <div class="cd-stat-num" id="stat-ingresaron">—</div>
+        <div class="cd-stat-label">Ingresaron</div>
+      </div>
+      <div class="cd-stat rojo">
+        <div class="cd-stat-num" id="stat-sin-ingreso">—</div>
+        <div class="cd-stat-label">Sin ingreso</div>
+      </div>
+      <div class="cd-stat verde">
+        <div class="cd-stat-num" id="stat-salieron">—</div>
+        <div class="cd-stat-label">Marcaron salida</div>
+      </div>
+      <div class="cd-stat naranja">
+        <div class="cd-stat-num" id="stat-sin-salida">—</div>
+        <div class="cd-stat-label">Sin salida</div>
+      </div>
+    </div>
+
+    <!-- Cards por obra -->
+    <div id="cd-contenido">
+      <p class="cd-vacio">Cargando…</p>
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const db = window.supabase.createClient(window.APP_CONFIG.SUPABASE_URL, window.APP_CONFIG.SUPABASE_KEY);
+
+    // ── Tema ──────────────────────────────────────────────
+    function toggleTema() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      document.documentElement.setAttribute("data-theme", isDark ? "" : "dark");
+      localStorage.setItem("theme", isDark ? "" : "dark");
+    }
+
+    // ── Navegación por día ────────────────────────────────
+    function cambiarDia(delta) {
+      const input = document.getElementById("cd-fecha");
+      const d = new Date(input.value + "T12:00:00");
+      d.setDate(d.getDate() + delta);
+      input.value = d.toISOString().slice(0, 10);
+      cargarControlDiario();
+    }
+
+    // ── Control Diario ────────────────────────────────────
+    async function cargarControlDiario() {
+      const input = document.getElementById("cd-fecha");
+      const fecha = input?.value || new Date().toISOString().slice(0, 10);
+      const contenedor = document.getElementById("cd-contenido");
+      contenedor.innerHTML = '<p class="cd-vacio">Cargando…</p>';
+
+      // Reset stats
+      ["stat-ingresaron","stat-sin-ingreso","stat-salieron","stat-sin-salida"].forEach(id => {
+        document.getElementById(id).textContent = "—";
+      });
+
+      const desde = fecha + "T00:00:00";
+      const hasta  = fecha + "T23:59:59";
+
+      const [
+        { data: empleados },
+        { data: asistencias }
+      ] = await Promise.all([
+        db.from("empleados").select("nombre, obra").order("nombre"),
+        db.from("asistencias").select("empleado, tipo, hora")
+          .gte("hora", desde).lte("hora", hasta)
+      ]);
+
+      if (!empleados) {
+        contenedor.innerHTML = '<p class="cd-vacio">Error al cargar datos.</p>';
+        return;
+      }
+
+      // Agrupar empleados por obra
+      const porObra = new Map();
+      empleados.forEach(e => {
+        const key = e.obra?.trim() || "Sin obra asignada";
+        if (!porObra.has(key)) porObra.set(key, []);
+        porObra.get(key).push(e.nombre);
+      });
+
+      if (porObra.size === 0) {
+        contenedor.innerHTML = '<p class="cd-vacio">No hay asociados cargados en el sistema.</p>';
+        return;
+      }
+
+      // Indexar marcas por "nombre|tipo" → hora más temprana
+      const marcas = new Map();
+      (asistencias || []).forEach(a => {
+        const key = `${a.empleado}|${a.tipo}`;
+        if (!marcas.has(key)) marcas.set(key, a.hora);
+      });
+
+      const fmtHora = ts => new Date(ts).toLocaleTimeString("es-AR", { hour:"2-digit", minute:"2-digit", hour12:false });
+
+      let totalIngresaron = 0, totalSinIngreso = 0, totalSalieron = 0, totalSinSalida = 0;
+
+      const cards = [...porObra.keys()].sort().map(obraNombre => {
+        const lista = porObra.get(obraNombre);
+        let cntI = 0, cntS = 0;
+
+        const filas = lista.map(nombre => {
+          const ingreso = marcas.get(`${nombre}|ingreso`);
+          const salida  = marcas.get(`${nombre}|salida`);
+          if (ingreso) cntI++; else;
+          if (salida)  cntS++;
+
+          const tdI = ingreso
+            ? `<span class="cd-ok">✓ Marcó</span><span class="cd-hora">${fmtHora(ingreso)}</span>`
+            : `<span class="cd-no">— No marcó</span>`;
+          const tdS = salida
+            ? `<span class="cd-ok">✓ Marcó</span><span class="cd-hora">${fmtHora(salida)}</span>`
+            : `<span class="cd-no">— No marcó</span>`;
+
+          return `<tr>
+            <td class="cd-nombre-col">${nombre}</td>
+            <td>${tdI}</td>
+            <td>${tdS}</td>
+          </tr>`;
+        }).join("");
+
+        const total = lista.length;
+        totalIngresaron  += cntI;
+        totalSinIngreso  += (total - cntI);
+        totalSalieron    += cntS;
+        totalSinSalida   += (total - cntS);
+
+        const chipI = `<span class="cd-chip ${cntI === total ? "verde" : cntI > 0 ? "naranja" : "rojo"}">${cntI}/${total} ingresaron</span>`;
+        const chipS = `<span class="cd-chip ${cntS === total ? "verde" : cntS > 0 ? "naranja" : "rojo"}">${cntS}/${total} salieron</span>`;
+
+        return `
+          <div class="cd-card">
+            <div class="cd-card-header">
+              <span class="cd-card-nombre"><i data-lucide="hard-hat" style="width:15px;height:15px"></i> ${obraNombre}</span>
+              <div class="cd-chips">${chipI}${chipS}</div>
+            </div>
+            <table class="cd-table">
+              <thead><tr><th>Asociado</th><th>Ingreso</th><th>Salida</th></tr></thead>
+              <tbody>${filas}</tbody>
+            </table>
+          </div>`;
+      }).join("");
+
+      contenedor.innerHTML = `<div class="cd-grid">${cards}</div>`;
+
+      // Actualizar stats globales
+      document.getElementById("stat-ingresaron").textContent  = totalIngresaron;
+      document.getElementById("stat-sin-ingreso").textContent = totalSinIngreso;
+      document.getElementById("stat-salieron").textContent    = totalSalieron;
+      document.getElementById("stat-sin-salida").textContent  = totalSinSalida;
+
+      lucide.createIcons();
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    document.getElementById("cd-fecha").value = new Date().toISOString().slice(0, 10);
+    lucide.createIcons();
+    cargarControlDiario();
+  </script>
+</body>
+</html>

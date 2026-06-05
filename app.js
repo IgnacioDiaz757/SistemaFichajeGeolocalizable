@@ -90,7 +90,6 @@ function ocultarScanner() {
   clearTimeout(_scannerTimer);
   document.getElementById("scanner-overlay").style.display = "none";
   document.getElementById("scanner-result").style.display  = "none";
-  desbloquearCampos();
 }
 
 function mostrarResultadoScanner(nombre) {
@@ -110,13 +109,13 @@ function mostrarErrorScanner() {
   clearTimeout(_scannerTimer);
   reconocidoPorFacial = false; // No fue reconocido
   document.getElementById("scanner-overlay").style.display    = "none";
-  document.getElementById("scanner-nombre-result").textContent = "Cara no registrada\nCompletá los campos de abajo";
+  document.getElementById("scanner-nombre-result").textContent = "No reconocido — intentá de nuevo";
   document.getElementById("scanner-icono").textContent         = "✕";
   document.querySelector(".scanner-label").textContent         = "No reconocido";
+  document.getElementById("empleado").value = "";
   const result = document.getElementById("scanner-result");
   result.classList.add("scanner-result-error");
   result.style.display = "flex";
-  desbloquearCampos(); // Los campos quedan editables para completarlos manualmente
   // Se oculta solo después de 5s
   _scannerTimer = setTimeout(() => {
     result.style.display = "none";
@@ -406,7 +405,6 @@ async function iniciarStream() {
 
 async function abrirCamara() {
   ocultarScanner();      // limpia resultado anterior
-  desbloquearCampos();   // desbloquea si venía de un reconocimiento
   const seguro = location.protocol === "https:" ||
                  location.hostname  === "localhost" ||
                  location.hostname  === "127.0.0.1";
@@ -545,6 +543,7 @@ async function marcar(tipo) {
   const btnIngreso = document.getElementById("btn-ingreso");
   const btnSalida  = document.getElementById("btn-salida");
 
+  if (!reconocidoPorFacial) { mostrarMensaje("Debés ser identificado por reconocimiento facial para registrar", "error"); return; }
   if (!empleado)  { mostrarMensaje("Ingresá tu nombre primero", "error"); return; }
   if (!lugar)     { mostrarMensaje("Seleccioná la obra", "error"); return; }
   if (!fotoFile)  { mostrarMensaje("Sacá una foto antes de registrar", "error"); return; }
