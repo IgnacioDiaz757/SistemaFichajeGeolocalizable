@@ -279,6 +279,7 @@ async function cargarDatos() {
   renderTabla(datos);
   renderListaPorObra(datos);
   renderPaginacion();
+  cargarAlertaSinRostro();
 }
 
 function aplicarFiltros() {
@@ -300,6 +301,93 @@ function renderResumen(total, ingresos, salidas) {
   document.getElementById("cnt-total").textContent    = total;
   document.getElementById("cnt-ingresos").textContent = ingresos;
   document.getElementById("cnt-salidas").textContent  = salidas;
+}
+
+// ── Alerta sin reconocimiento facial ─────────────────────
+
+const ALERTA_DISMISS_KEY = "alerta_facial_dismissidos";
+
+function getAlertaDismissidos() {
+  try { return new Set(JSON.parse(localStorage.getItem(ALERTA_DISMISS_KEY) || "[]")); }
+  catch { return new Set(); }
+}
+
+function dismissirAlerta(nombre) {
+  const set = getAlertaDismissidos();
+  set.add(nombre);
+  localStorage.setItem(ALERTA_DISMISS_KEY, JSON.stringify([...set]));
+  cargarAlertaSinRostro();
+}
+
+async function cargarAlertaSinRostro() {
+  const hace30dias = new Date();
+  hace30dias.setDate(hace30dias.getDate() - 30);
+
+  const [
+    { data: asistencias },
+    { data: empleados }
+  ] = await Promise.all([
+    db.from("asistencias").select("empleado, hora")
+      .gte("hora", hace30dias.toISOString())
+      .order("hora", { ascending: false }),
+    db.from("empleados").select("nombre, descriptors")
+  ]);
+
+  const panel = document.getElementById("alerta-sin-rostro");
+
+  if (!asistencias) { panel.style.display = "none"; return; }
+
+  // Nombres con descriptors válidos
+  const conRostro = new Set(
+    (empleados || [])
+      .filter(e => Array.isArray(e.descriptors) && e.descriptors.length > 0)
+      .map(e => e.nombre)
+  );
+
+  // Último registro por persona (ya viene ordenado desc)
+  const ultimoRegistro = new Map();
+  for (const a of asistencias) {
+    if (!ultimoRegistro.has(a.empleado)) ultimoRegistro.set(a.empleado, a.hora);
+  }
+
+  const dismissidos = getAlertaDismissidos();
+
+  // Personas sin rostro, sin dismissar, que marcaron en los últimos 30 días
+  const sinRostro = [];
+  for (const [nombre, hora] of ultimoRegistro) {
+    if (!conRostro.has(nombre) && !dismissidos.has(nombre)) sinRostro.push({ nombre, hora });
+  }
+
+  if (!sinRostro.length) { panel.style.display = "none"; return; }
+
+  document.getElementById("alerta-facial-count").textContent = sinRostro.length;
+
+  const hoy  = new Date();
+  const ayer = new Date(); ayer.setDate(ayer.getDate() - 1);
+
+  document.getElementById("alerta-facial-lista").innerHTML = sinRostro.map(p => {
+    const d = new Date(p.hora);
+    let fechaStr;
+    if (d.toDateString() === hoy.toDateString()) {
+      fechaStr = `hoy ${d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    } else if (d.toDateString() === ayer.toDateString()) {
+      fechaStr = `ayer ${d.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+    } else {
+      fechaStr = d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
+    }
+    const nombreEscapado = p.nombre.replace(/'/g, "\\'");
+    return `<div class="alerta-facial-item">
+      <i data-lucide="user"></i>
+      <span class="alerta-facial-nombre">${p.nombre}</span>
+      <span class="alerta-facial-hora">última marca: ${fechaStr}</span>
+      <button class="alerta-facial-dismiss" onclick="dismissirAlerta('${nombreEscapado}')" title="Ocultar de la lista">
+        <i data-lucide="x"></i>
+      </button>
+    </div>`;
+  }).join("");
+
+  panel.style.display = "block";
+  lucide.createIcons();
 }
 
 function renderPaginacion() {
