@@ -1328,6 +1328,139 @@
 
     /* ── Print ───────────────────────────────────────────── */
 
+    /* ── Hamburger / Mobile Nav ─────────────────────────── */
+    .hamburger-btn {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.12);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .hamburger-btn span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: #fff;
+      border-radius: 2px;
+      transition: transform 0.25s ease, opacity 0.2s ease;
+      transform-origin: center;
+    }
+    .hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .nav-overlay {
+      display: none;
+      position: fixed;
+      inset: 60px 0 0 0;
+      z-index: 98;
+    }
+    .nav-overlay.open { display: block; }
+
+    .nav-mobile {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: var(--header-bg);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      z-index: 99;
+      flex-direction: column;
+      padding: 6px 0 16px;
+      max-height: calc(100dvh - 60px);
+      overflow-y: auto;
+    }
+    .nav-mobile.open { display: flex; }
+
+    .nav-mobile-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 13px 20px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.88);
+      font-size: 14.5px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      font-family: inherit;
+      transition: background 0.12s;
+    }
+    .nav-mobile-item:active { background: rgba(255,255,255,0.1); }
+    .nav-mobile-item i { width: 18px; height: 18px; flex-shrink: 0; opacity: 0.75; }
+    .nav-mobile-item .nm-icon { font-size: 16px; width: 18px; text-align: center; flex-shrink: 0; }
+    .nav-mobile-item.nm-verde   { color: #81c784; }
+    .nav-mobile-item.nm-azul    { color: #90caf9; }
+    .nav-mobile-item.nm-naranja { color: #ffcc80; }
+    .nav-mobile-item.nm-rojo    { color: #ef9a9a; }
+    .nav-mobile-sep { height: 1px; background: rgba(255,255,255,0.1); margin: 6px 16px; }
+
+    @media (max-width: 767px) {
+      .hamburger-btn { display: flex; }
+
+      header {
+        height: 60px !important;
+        padding: 0 16px !important;
+        flex-wrap: nowrap !important;
+        min-height: 60px;
+      }
+      .header-actions { display: none !important; }
+      .header-brand { width: auto !important; margin-bottom: 0 !important; }
+      .brand-sub { display: none !important; }
+
+      .contenido { padding: 14px 12px 32px; max-width: 100%; }
+      .resumen { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .card-stat { padding: 12px 14px; gap: 10px; }
+      .stat-ico { width: 38px; height: 38px; }
+      .stat-ico i { width: 18px; height: 18px; }
+      .numero { font-size: 22px; }
+      .label { font-size: 11px; }
+
+      .config-grid { grid-template-columns: 1fr; gap: 12px; }
+
+      .filtros { gap: 8px; flex-wrap: wrap; }
+      .filtros input, .filtros select { width: 100%; padding: 8px 12px; font-size: 13px; }
+      .filtros .btn, .btn-outline-gris { width: 100%; font-size: 13px; }
+
+      .tabla-wrap { display: block !important; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+      .tabla-wrap table { font-size: 12px; min-width: 580px; }
+      thead th { padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+      tbody td { padding: 8px 10px; font-size: 12px; }
+      #paginacion { display: flex !important; }
+      #aviso-mobile { display: none !important; }
+
+      .nueva-obra-form { padding: 12px 14px; gap: 8px; }
+      .nueva-obra-form input[type="text"],
+      .nueva-obra-form input[type="number"] { width: 100%; }
+
+      .modal-card { margin: 10px; padding: 18px 14px; }
+      .modal-header h2 { font-size: 15px; }
+      .modal-field select, .modal-field input { padding: 9px 11px; font-size: 13px; }
+      .modal-footer { flex-direction: column; }
+      .modal-footer .btn, .modal-footer .btn-cancel { flex: none !important; width: 100%; }
+
+      .seccion-titulo { font-size: 12px; }
+      .registro-fila { gap: 6px; padding: 8px 10px; font-size: 12px; }
+      .foto-thumb, .foto-none { width: 36px; height: 36px; }
+    }
+
+    @media (min-width: 768px) {
+      .hamburger-btn { display: none !important; }
+      .nav-mobile, .nav-overlay { display: none !important; }
+    }
+
     /* ── Print ───────────────────────────────────────────── */
     @media print {
       header .header-actions,
@@ -1392,7 +1525,52 @@
 
       <button class="btn btn-naranja" onclick="cerrarSesion()">Salir</button>
     </div>
+
+    <!-- Botón hamburger (solo mobile) -->
+    <button class="hamburger-btn" id="hamburger-btn" onclick="toggleNavMobile()" aria-label="Menú">
+      <span></span><span></span><span></span>
+    </button>
   </header>
+
+  <!-- ── Menú móvil ─────────────────────────────────────── -->
+  <div class="nav-overlay" id="nav-overlay" onclick="cerrarNavMobile()"></div>
+  <nav class="nav-mobile" id="nav-mobile">
+    <button class="nav-mobile-item" id="nav-tema-btn" onclick="toggleTemaAdmin();cerrarNavMobile()">
+      <span class="nm-icon nav-tema-icon">🌙</span>
+      Cambiar tema
+    </button>
+    <button class="nav-mobile-item" onclick="cargarDatos();cerrarNavMobile()">
+      <i data-lucide="refresh-cw"></i>
+      Actualizar datos
+    </button>
+    <div class="nav-mobile-sep"></div>
+    <button class="nav-mobile-item nm-azul" onclick="window.location.href='control-diario.html'">
+      <i data-lucide="clipboard-check"></i>
+      Control diario
+    </button>
+    <button class="nav-mobile-item nm-azul" onclick="window.location.href='historial-planillas.html'">
+      <i data-lucide="file-text"></i>
+      Historial de Planillas
+    </button>
+    <button class="nav-mobile-item nm-azul" onclick="window.location.href='registro-caras.html'">
+      <i data-lucide="camera"></i>
+      Registro de caras
+    </button>
+    <button class="nav-mobile-item nm-azul" onclick="window.location.href='como-funciona.html'">
+      <i data-lucide="help-circle"></i>
+      Cómo funciona
+    </button>
+    <div class="nav-mobile-sep"></div>
+    <button class="nav-mobile-item nm-verde" onclick="abrirModalPlanilla();cerrarNavMobile()">
+      <i data-lucide="download"></i>
+      Generar planilla
+    </button>
+    <div class="nav-mobile-sep"></div>
+    <button class="nav-mobile-item nm-rojo" onclick="cerrarSesion()">
+      <i data-lucide="log-out"></i>
+      Salir
+    </button>
+  </nav>
 
   <!-- ── Contenido ──────────────────────────────────────── -->
   <div class="contenido">
@@ -1699,11 +1877,35 @@
     }
 
     function actualizarIconAdmin() {
+      const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+      const icon = isDark ? "☀️" : "🌙";
       const btn = document.getElementById("btn-tema-admin");
-      if (btn) btn.textContent = document.documentElement.getAttribute("data-theme") === "dark" ? "☀️" : "🌙";
+      if (btn) btn.textContent = icon;
+      const navIcon = document.querySelector(".nav-tema-icon");
+      if (navIcon) navIcon.textContent = icon;
     }
 
-    document.addEventListener("DOMContentLoaded", actualizarIconAdmin);
+    function toggleNavMobile() {
+      const nav     = document.getElementById('nav-mobile');
+      const btn     = document.getElementById('hamburger-btn');
+      const overlay = document.getElementById('nav-overlay');
+      const isOpen  = nav.classList.toggle('open');
+      btn.classList.toggle('open', isOpen);
+      overlay.classList.toggle('open', isOpen);
+      document.body.style.overflow = isOpen ? 'hidden' : '';
+    }
+
+    function cerrarNavMobile() {
+      document.getElementById('nav-mobile')?.classList.remove('open');
+      document.getElementById('hamburger-btn')?.classList.remove('open');
+      document.getElementById('nav-overlay')?.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      actualizarIconAdmin();
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarNavMobile(); });
+    });
   </script>
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
